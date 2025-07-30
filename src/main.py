@@ -1,34 +1,18 @@
+import asyncio
 import base64
+
 from fastapi import FastAPI, WebSocket
 from fastapi.websockets import WebSocketDisconnect, WebSocketState
 from pydantic import BaseModel, Field
+
 from ai.agents.live import LiveAgent, MessageType
-from utils.audio_codec import AudioCodec
+from ai.agents.voomi import Voomi
 from ai.prompts import live
 from functools import partial
-from app.services.live_api_bridge import process_text_with_agent
-import json
+from utils.audio_codec import AudioCodec
+import config as config
 
 app = FastAPI(title="Voomi Live WebSocket")
-
-
-def call_agent(prompt: str) -> dict:
-    """
-    calls the LangChain agent and returns a simple dictionary
-    containing only the response text for the model to speak.
-    """
-    print(f"INFO: Handing off to agent thread for prompt: '{prompt}'")
-    agent_json_string = process_text_with_agent(prompt)
-    try:
-        # Parse the JSON string from the agent
-        agent_data = json.loads(agent_json_string)
-        # Extract only the text that needs to be spoken
-        response_text = agent_data.get("responseText", "Error: Could not parse agent response.")
-    except (json.JSONDecodeError, TypeError):
-        # Handle cases where the agent returns a plain string or invalid JSON
-        response_text = agent_json_string
-    print(f"INFO: Received agent response: '{response_text}'")
-    return {"text_response": response_text}
 
 
 @app.websocket("/ws")
@@ -37,8 +21,9 @@ async def websocket_endpoint(ws: WebSocket):
 
     # TODO: move it somewhere
     class ClientData(BaseModel):
-        text: str | None = Field(...)
-        audio: str | None = Field(...)
+        text: str | None = None
+        audio: str | None = None
+        interrupted: bool = Field(default=False)
 
     async def send_json(type_, data):
         await ws.send_json({"type": f"{type_}-delta", "data": data})
@@ -54,32 +39,52 @@ async def websocket_endpoint(ws: WebSocket):
     }
 
     try:
+        voomi = Voomi()
         async with LiveAgent(
             config={
-                "API_KEY": "AIzaSyDghmp3M-3WngG5StlQiF3wmq7pqxYEw9A",
+                "API_KEY": config.GOOGLE_API_KEY,
                 "ENABLE_TRANSCRIPTION": True,
                 "MODEL": "gemini-live-2.5-flash-preview",
                 "SYSTEM_PROMPT": live.SYSTEM_PROMPT,
             },
-            tools=[call_agent],
+            tools=[voomi],
         ) as live_agent:
-            while ws.client_state in [
-                WebSocketState.CONNECTED,
-                WebSocketState.CONNECTING,
-            ]:
-                data = ClientData.model_validate_json(await ws.receive_text())
+            interrupted_event = asyncio.Event()
 
-                if data.text:
-                    await live_agent.send_text(data.text)
+            async def receive_thread():
+                while ws.client_state in [
+                    WebSocketState.CONNECTED,
+                    WebSocketState.CONNECTING,
+                ]:
+                    data = ClientData.model_validate_json(await ws.receive_text())
+                    if data.interrupted:
+                        interrupted_event.set()
 
-                if data.audio:
-                    await live_agent.send_audio(base64.b64decode(data.audio))
+                    if data.text:
+                        await live_agent.send_text(data.text)
 
-                async for message in live_agent.receive_message():
+                    if data.audio:
+                        await live_agent.send_audio(base64.b64decode(data.audio))
+
+            async def send_thread():
+                while ws.client_state in [
+                    WebSocketState.CONNECTED,
+                    WebSocketState.CONNECTING,
+                ]:
                     await ws.send_json({"type": "start"})
-                    if handler := handle_message_type.get(message.type):
-                        await handler(message.data)
-                await ws.send_json({"type": "end"})
+
+                    async for message in live_agent.receive_message():
+                        if interrupted_event.is_set():
+                            print("Interrupted")
+                            continue
+                        if handler := handle_message_type.get(message.type):
+                            await handler(message.data)
+
+                    interrupted_event.clear()
+
+                    await ws.send_json({"type": "end"})
+
+            await asyncio.gather(receive_thread(), send_thread())
 
     except WebSocketDisconnect:
         # maybe log? make a summary?
