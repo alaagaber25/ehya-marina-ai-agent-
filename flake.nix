@@ -10,16 +10,47 @@
   outputs = inputs:
     inputs.flake-parts.lib.mkFlake {inherit inputs;} {
       systems = import inputs.systems;
-      # imports = [inputs.process-compose-flake.flakeModule];
+      imports = [inputs.process-compose-flake.flakeModule];
 
-      perSystem = {pkgs, ...}: let
-        env = {
+      perSystem = {
+        config,
+        pkgs,
+        ...
+      }: let
+        db = {
+          name = "voomi";
+          user = "postgres";
+          password = "postgres";
+          port = 5432;
+        };
+
+        env = rec {
           LD_LIBRARY_PATH = "${pkgs.stdenv.cc.cc.lib}/lib";
+          DATABASE_URL = "postgresql+asyncpg://${db.user}:${db.password}@localhost:${toString db.port}/${db.name}";
         };
       in {
+        process-compose.dev = {
+          imports = [
+            inputs.services-flake.processComposeModules.default
+          ];
+
+          services = {
+            postgres.pg = {
+              enable = true;
+              package = pkgs.postgresql_17;
+              initialScript.after = ''
+                CREATE USER ${db.user} WITH password '${db.password}' SUPERUSER;
+                GRANT ALL PRIVILEGES ON DATABASE ${db.name} TO ${db.user};
+              '';
+              initialDatabases = [{inherit (db) name;}];
+            };
+          };
+        };
+
         devShells.default = pkgs.mkShell {
           inherit env;
-          buildInputs = with pkgs; [python312];
+          inputsFrom = [config.process-compose.dev.services.outputs.devShell];
+          buildInputs = with pkgs; [uv];
           shellHook = ''
             print() {
               echo
@@ -28,7 +59,8 @@
               lines=(
               "🚀 Ready to launch into dev mode!"
               ""
-              "Run: ''${bold}nix run .#dev''${normal}"
+              "Run: ''${bold}uv sync''${normal} to install dependencies"
+              "Run: ''${bold}nix run .#dev''${normal} to start PostgreSQL"
               ""
               "✨ Let the magic begin! ✨"
               )

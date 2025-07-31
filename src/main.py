@@ -1,73 +1,117 @@
 import asyncio
 import base64
 import logging
-from functools import partial
+from contextlib import asynccontextmanager
+from datetime import datetime
 
-from fastapi import FastAPI, WebSocket
+from fastapi import Depends, FastAPI, WebSocket
 from fastapi.websockets import WebSocketDisconnect, WebSocketState
 from pydantic import BaseModel, Field
+from sqlalchemy.ext.asyncio import AsyncSession
 
+import config as config
 from ai.agents.live import LiveAgent, MessageType
 from ai.agents.voomi import Voomi
 from ai.prompts import live
+from db import DatabaseService, MessageDirection, create_tables, get_db
 from utils.audio_codec import AudioCodec
-import config as config
+from utils.message_accumulator import MessageAccumulator
 
-# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="Voomi Live WebSocket")
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    await create_tables()
+    yield
+    print("Shutting down...")
+
+
+app = FastAPI(title="Voomi Live WebSocket", lifespan=lifespan)
+
+
+class ClientData(BaseModel):
+    text: str | None = None
+    audio: str | None = None
+    audio_stream_end: bool = Field(default=False)
 
 
 @app.websocket("/ws")
-async def websocket_endpoint(ws: WebSocket):
+async def websocket_endpoint(ws: WebSocket, db: AsyncSession = Depends(get_db)):
     await ws.accept()
 
-    class ClientData(BaseModel):
-        text: str | None = None
-        audio: str | None = None
-        # Remove client-side interruption flag - use server VAD instead
-        audio_stream_end: bool = Field(default=False)  # Signal end of audio stream
+    # Create a new chat session
+    chat = await DatabaseService.create_chat(db, "Live Chat Session")
+    voomi = Voomi()
+    message_accumulator = MessageAccumulator()
 
-    async def send_json(type_: str, data):
-        """Send JSON message to client"""
+    logger.info(f"Created chat session: {chat.id}")
+
+    async def send_json_streaming(type_: str, data, content_type: MessageType):
+        """Send JSON message to client and accumulate for later DB save"""
         try:
-            await ws.send_json({"type": f"{type_}-delta", "data": data})
+            timestamp = datetime.now()
+
+            # Send message to client immediately (streaming)
+            response = {
+                "type": f"{type_}-delta",
+                "data": data,
+                "chat_id": str(chat.id),
+                "timestamp": timestamp.isoformat(),
+            }
+
+            await ws.send_json(response)
+            logger.debug(f"Sent {type_} delta")
+
+            # Accumulate message pieces (don't save to DB yet)
+            if content_type in [
+                MessageType.TEXT,
+                MessageType.AUDIO,
+                MessageType.OUTPUT_TRANSCRIPTION,
+            ]:
+                message_accumulator.add_piece(content_type, data)
+
         except Exception as e:
             logger.error(f"Failed to send {type_} message: {e}")
 
-    # Enhanced message handlers
+    async def handle_message_completion():
+        """Called when agent finishes sending a complete message"""
+        logger.info("Agent finished sending message, saving to database...")
+        await message_accumulator.save_accumulated_message(db, chat.id)
+
+    # Fixed message handlers with proper content_type
     handle_message_type = {
-        MessageType.TEXT: partial(send_json, "text"),
-        MessageType.INPUT_TRANSCRIPTION: partial(send_json, "input_transcription"),
-        MessageType.OUTPUT_TRANSCRIPTION: partial(send_json, "output_transcription"),
-        MessageType.AUDIO: lambda data: send_json("audio", AudioCodec.to_wav(data)),
-        MessageType.INTERRUPTION: lambda data: send_json(
-            "interruption", {"interrupted": data}
+        MessageType.TEXT: lambda data: send_json_streaming(
+            "text", data, MessageType.TEXT
         ),
-        MessageType.TOOL_CALL_CANCELLED: lambda data: send_json(
-            "tool_cancelled", {"cancelled_ids": data}
+        MessageType.INPUT_TRANSCRIPTION: lambda data: send_json_streaming(
+            "input_transcription", data, MessageType.INPUT_TRANSCRIPTION
+        ),
+        MessageType.OUTPUT_TRANSCRIPTION: lambda data: send_json_streaming(
+            "output_transcription", data, MessageType.OUTPUT_TRANSCRIPTION
+        ),
+        MessageType.AUDIO: lambda data: send_json_streaming(
+            "audio", AudioCodec.to_wav(data), MessageType.AUDIO
+        ),
+        MessageType.INTERRUPTION: lambda data: send_json_streaming(
+            "interruption", {"interrupted": data}, MessageType.INTERRUPTION
+        ),
+        MessageType.TOOL_CALL_CANCELLED: lambda data: send_json_streaming(
+            "tool_cancelled", {"cancelled_ids": data}, MessageType.TOOL_CALL
         ),
     }
 
     try:
-        voomi = Voomi()
-
-        # Enhanced configuration with VAD settings
-        live_config = {
-            "API_KEY": config.GOOGLE_API_KEY,
-            "ENABLE_TRANSCRIPTION": True,
-            "MODEL": "gemini-2.0-flash-live-001",  # Use the standard live model
-            "SYSTEM_PROMPT": live.SYSTEM_PROMPT,
-            # VAD configuration for better interruption handling
-            # "VAD_START_SENSITIVITY": "medium",  # Adjust based on your needs
-            # "VAD_END_SENSITIVITY": "medium",
-            # "VAD_SILENCE_DURATION_MS": 300,  # How long to wait for silence before ending speech
-            # "VAD_PREFIX_PADDING_MS": 50,  # Padding before speech detection
-        }
-
-        async with LiveAgent(config=live_config, tools=[voomi]) as live_agent:
+        async with LiveAgent(
+            config={
+                "API_KEY": config.GOOGLE_API_KEY,
+                "ENABLE_TRANSCRIPTION": True,
+                "MODEL": "gemini-2.0-flash-live-001",
+                "SYSTEM_PROMPT": live.SYSTEM_PROMPT,
+            },
+            tools=[voomi],
+        ) as live_agent:
 
             async def receive_thread():
                 """Handle incoming WebSocket messages"""
@@ -82,12 +126,36 @@ async def websocket_endpoint(ws: WebSocket):
                         # Handle text input
                         if data.text:
                             logger.info(f"Received text: {data.text[:50]}...")
+
+                            asyncio.create_task(
+                                DatabaseService.save_message(
+                                    db=db,
+                                    chat_id=chat.id,
+                                    direction=MessageDirection.INCOMING,
+                                    content_type=MessageType.TEXT,
+                                    text_content=data.text,
+                                )
+                            )
+
                             await live_agent.send_text(data.text)
 
                         # Handle audio input
                         if data.audio:
                             logger.debug("Received audio chunk")
-                            await live_agent.send_audio(base64.b64decode(data.audio))
+                            audio_data = base64.b64decode(data.audio)
+
+                            asyncio.create_task(
+                                DatabaseService.save_message(
+                                    db=db,
+                                    chat_id=chat.id,
+                                    direction=MessageDirection.INCOMING,
+                                    content_type=MessageType.AUDIO,
+                                    audio_content=audio_data,
+                                    audio_format="audio/pcm",
+                                )
+                            )
+
+                            await live_agent.send_audio(audio_data)
 
                         # Handle audio stream end signal
                         if data.audio_stream_end:
@@ -102,8 +170,12 @@ async def websocket_endpoint(ws: WebSocket):
             async def send_thread():
                 """Handle outgoing messages from the Live API"""
                 try:
-                    # Send initial connection confirmation
-                    await ws.send_json({"type": "connected", "data": {}})
+                    # Send initial connection confirmation with chat ID
+                    await ws.send_json(
+                        {"type": "connected", "data": {"chat_id": str(chat.id)}}
+                    )
+
+                    message_timeout = None
 
                     while ws.client_state in [
                         WebSocketState.CONNECTED,
@@ -113,16 +185,33 @@ async def websocket_endpoint(ws: WebSocket):
                             if handler := handle_message_type.get(message.type):
                                 await handler(message.data)
 
+                                # Reset timeout for message completion detection
+                                if message_timeout:
+                                    message_timeout.cancel()
+
+                                # Set timeout to detect when agent stops sending messages
+                                async def timeout_handler():
+                                    await asyncio.sleep(
+                                        2.0
+                                    )  # Wait 2 seconds after last message
+                                    await handle_message_completion()
+
+                                message_timeout = asyncio.create_task(timeout_handler())
+
                 except WebSocketDisconnect:
                     logger.info("WebSocket disconnected in send_thread")
                 except Exception as e:
                     logger.error(f"Error in send_thread: {e}")
+                finally:
+                    # Save any remaining accumulated message
+                    if message_accumulator.is_collecting:
+                        await handle_message_completion()
 
             # Run both threads concurrently
             await asyncio.gather(
                 receive_thread(),
                 send_thread(),
-                return_exceptions=True,  # Don't fail if one task fails
+                return_exceptions=True,
             )
 
     except WebSocketDisconnect:
@@ -131,10 +220,59 @@ async def websocket_endpoint(ws: WebSocket):
         logger.error(f"Unexpected error in websocket_endpoint: {e}")
     finally:
         try:
+            # Ensure any pending message is saved
+            if message_accumulator.is_collecting:
+                await handle_message_completion()
+
+            await db.close()
             if ws.client_state == WebSocketState.CONNECTED:
                 await ws.close()
         except Exception as e:
-            logger.error(f"Error closing WebSocket: {e}")
+            logger.error(f"Error closing resources: {e}")
+
+
+# Endpoints for retrieving chats & messages
+#
+# @app.get("/chats")
+# async def get_chats(db: AsyncSession = Depends(get_db)):
+#     """Get all chat sessions"""
+#     from sqlalchemy import select
+#
+#     from db import Chat
+#
+#     result = await db.execute(select(Chat).order_by(Chat.created_at.desc()))  # type: ignore
+#     chats = result.scalars().all()
+#
+#     return [
+#         {
+#             "id": str(chat.id),
+#             "title": chat.title,
+#             "created_at": chat.created_at.isoformat(),
+#             "updated_at": chat.updated_at.isoformat(),
+#             "is_active": chat.is_active,
+#         }
+#         for chat in chats
+#     ]
+#
+#
+# @app.get("/chats/{chat_id}/messages")
+# async def get_chat_messages(chat_id: str, db: AsyncSession = Depends(get_db)):
+#     """Get all messages for a specific chat"""
+#     messages = await DatabaseService.get_chat_messages(db, uuid.UUID(chat_id))
+#
+#     return [
+#         {
+#             "id": str(msg.id),
+#             "direction": msg.direction,
+#             "content_type": msg.content_type,
+#             "text_content": msg.text_content,
+#             "audio_format": msg.audio_format,
+#             "has_audio": msg.audio_content is not None,
+#             "created_at": msg.created_at.isoformat(), # type: ignore
+#             "metadata": msg.metadata,
+#         }
+#         for msg in messages
+#     ]
 
 
 if __name__ == "__main__":

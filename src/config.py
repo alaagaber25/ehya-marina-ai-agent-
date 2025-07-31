@@ -1,10 +1,16 @@
 import os
+
 from dotenv import load_dotenv
 
 load_dotenv()
 
+
+DATABASE_URL = os.getenv("DATABASE_URL", "")
+if not DATABASE_URL:
+    raise ValueError("ERROR: DATABASE_URL not found in .env file")
+
 # --- Google Gemini ---
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", "")
 if not GOOGLE_API_KEY:
     raise ValueError("ERROR: GOOGLE_API_KEY not found in .env file")
 

@@ -1,19 +1,21 @@
-from dataclasses import dataclass
-from enum import Enum, auto
-from typing import Any, Callable, TypedDict, AsyncGenerator
 import logging
+from collections.abc import AsyncGenerator, Callable
+from dataclasses import dataclass
+from enum import StrEnum, auto
+from typing import Any, Literal, NotRequired, TypedDict
 
 from google import genai
 from google.genai.types import (
     AudioTranscriptionConfig,
+    Blob,
     Content,
+    EndSensitivity,
+    FunctionResponse,
     LiveConnectConfig,
     Modality,
     Part,
-    FunctionResponse,
-    Blob,
+    RealtimeInputConfigOrDict,
     StartSensitivity,
-    EndSensitivity,
 )
 
 logger = logging.getLogger(__name__)
@@ -25,13 +27,13 @@ class LiveAgentConfig(TypedDict):
     SYSTEM_PROMPT: str
     ENABLE_TRANSCRIPTION: bool
     # Add VAD configuration options
-    VAD_START_SENSITIVITY: str | None  # 'low', 'medium', 'high'
-    VAD_END_SENSITIVITY: str | None  # 'low', 'medium', 'high'
-    VAD_SILENCE_DURATION_MS: int | None
-    VAD_PREFIX_PADDING_MS: int | None
+    VAD_START_SENSITIVITY: NotRequired[Literal["low"] | Literal["high"]]
+    VAD_END_SENSITIVITY: NotRequired[Literal["low"] | Literal["high"]]
+    VAD_SILENCE_DURATION_MS: NotRequired[int]
+    VAD_PREFIX_PADDING_MS: NotRequired[int]
 
 
-class MessageType(Enum):
+class MessageType(StrEnum):
     TEXT = auto()
     AUDIO = auto()
     TOOL_CALL = auto()
@@ -64,7 +66,7 @@ class LiveAgent:
             ),
             input_audio_transcription=audio_transcription_config,
             output_audio_transcription=audio_transcription_config,
-            realtime_input_config=realtime_input_config,
+            realtime_input_config=realtime_input_config, # type: ignore
         )
 
         self.__model = config.get("MODEL")
@@ -74,15 +76,15 @@ class LiveAgent:
     @staticmethod
     def __get_transcroption_config(
         config: LiveAgentConfig,
-    ) -> AudioTranscriptionConfig | None:
+    ):
         if config.get("ENABLE_TRANSCRIPTION"):
             return AudioTranscriptionConfig()
         return None
 
     @staticmethod
-    def __get_realtime_input_config(config: LiveAgentConfig) -> dict | None:
+    def __get_realtime_input_config(config: LiveAgentConfig):
         """Configure VAD settings for better interruption handling"""
-        vad_config = {}
+        vad_config: RealtimeInputConfigOrDict = {}
 
         # Map string values to enum values
         start_sensitivity_map = {
