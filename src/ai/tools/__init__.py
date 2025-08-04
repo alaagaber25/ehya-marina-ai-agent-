@@ -4,6 +4,7 @@ import cloudscraper
 import csv 
 from langchain.tools import tool
 from typing import Optional, List, Dict, Any
+import json
 
 import time
 from requests.exceptions import RequestException, ConnectionError, Timeout
@@ -250,8 +251,11 @@ def navigate_to_page(url: str) -> str:
     Returns:
         str: A confirmation message indicating the navigation was successful.
     """
-    logging.info(f"Tool: Simulating navigation to URL: {url}")
-    return f"Navigated to {url}."
+    navigation_action = {
+        "action": "navigate",
+        "url": url
+    }
+    return json.dumps(navigation_action)
 
 @tool
 def click_element(selector: str) -> str:
