@@ -5,6 +5,9 @@ import csv
 from langchain.tools import tool
 from typing import Optional, List, Dict, Any
 
+import time
+from requests.exceptions import RequestException, ConnectionError, Timeout
+
 logging.basicConfig(level=logging.INFO)
 
 # --- Caching Mechanism ---
@@ -93,6 +96,11 @@ def search_units_in_memory(
     return results_to_filter
 
 
+last_search_results: List[Dict[str, Any]] = []
+scraper = cloudscraper.create_scraper(
+    browser={"custom": "ScraperBot/1.0"}
+)
+
 @tool
 def get_project_units(
     project_id: str,
@@ -105,64 +113,73 @@ def get_project_units(
     max_area: Optional[float] = None
 ) -> List[Dict[str, Any]]:
     """
-    Fetches and filters unit data from the main database for ALL NEW searches.
-    This tool populates the memory with its findings for follow-up questions.
+    Tool: Fetches units from the real estate API and applies filters.
+    Uses retry mechanism and returns a summary if results are large.
     """
     global last_search_results
-    scraper = cloudscraper.create_scraper()
-    
     api_url = f"https://realestate-api.voom.cc/api/v1/companies/{project_id}/units"
-    logging.info(f"Tool: Fetching all unit data for project '{project_id}'...")
 
-    try:
-        response = scraper.get(api_url, timeout=30)
-        response.raise_for_status()
-        all_units = response.json().get("data", {}).get("units", [])
-        logging.info(f"Tool: Successfully fetched {len(all_units)} total units.")
+    retries = 3
+    for attempt in range(retries):
+        try:
+            logging.info(f"Tool: Attempt {attempt + 1}/{retries} to fetch data from {api_url}")
+            response = scraper.get(api_url, timeout=15)
+            response.raise_for_status()
 
-        
-        # --- Filtering Logic ---
-        filtered_units = all_units
-        if unit_code:
-            filtered_units = [u for u in filtered_units if u.get('code', '').lower() == unit_code.lower()]
-        if unit_type:
-            filtered_units = [u for u in filtered_units if unit_type.lower() in u.get('unit_type', '').lower()]
-        if building:
-            filtered_units = [u for u in filtered_units if u.get('building', '').lower() == building.lower()]
-        if availability:
-            filtered_units = [u for u in filtered_units if u.get('availability', '').lower() == availability.lower()]
-        if min_area is not None:
-            filtered_units = [u for u in filtered_units if float(u.get('unit_area', 0)) >= min_area]
-        if max_area is not None:
-            filtered_units = [u for u in filtered_units if float(u.get('unit_area', 0)) <= max_area]
+            all_units = response.json().get("data", {}).get("units", [])
+            logging.info(f"Tool: Retrieved {len(all_units)} units")
 
-        # --- CRITICAL FIX: Update the 'last_search_results' cache with the FULL, filtered data ---
-        last_search_results = filtered_units
-        logging.info(f"Tool: 'Last Search' cache updated with {len(last_search_results)} units. This is now the source of truth for follow-ups.")
+            # Apply filters
+            filtered_units = all_units
+            if unit_code:
+                filtered_units = [u for u in filtered_units if u.get('code', '').lower() == unit_code.lower()]
+            if unit_type:
+                filtered_units = [u for u in filtered_units if unit_type.lower() in u.get('unit_type', '').lower()]
+            if building:
+                filtered_units = [u for u in filtered_units if u.get('building', '').lower() == building.lower()]
+            if floor:
+                filtered_units = [u for u in filtered_units if u.get('floor', '').lower() == floor.lower()]
+            if availability:
+                filtered_units = [u for u in filtered_units if u.get('availability', '').lower() == availability.lower()]
+            if min_area is not None:
+                filtered_units = [u for u in filtered_units if float(u.get('unit_area', 0)) >= min_area]
+            if max_area is not None:
+                filtered_units = [u for u in filtered_units if float(u.get('unit_area', 0)) <= max_area]
 
-        # --- Summarization Logic ---
-        if len(filtered_units) > 10:
-            logging.info("Tool: Result is large. Creating a summary.")
-            summary = [
-                {
-                    "code": u.get("code"),
-                    "unit_type": u.get("unit_type"),
-                    "unit_area": u.get("unit_area"),
-                    "availability": u.get("availability"),
-                    "building": u.get("building"),
-                    "floor": u.get("floor")
-                }
-                for u in filtered_units[:10]
-            ]
-            summary.append({"summary_message": f"Found {len(filtered_units)} units. Showing a sample of the first 10."})
-            return summary
+            last_search_results = filtered_units
+            logging.info(f"Tool: Cached {len(filtered_units)} filtered units")
 
-        return filtered_units
+            if len(filtered_units) > 10:
+                summary = [
+                    {
+                        "code": u.get("code"),
+                        "unit_type": u.get("unit_type"),
+                        "unit_area": u.get("unit_area"),
+                        "availability": u.get("availability"),
+                        "building": u.get("building"),
+                        "floor": u.get("floor")
+                    }
+                    for u in filtered_units[:10]
+                ]
+                summary.append({"summary_message": f"Found {len(filtered_units)} units. Showing first 10."})
+                return summary
 
-    except Exception as e:
-        logging.error(f"Tool: Failed to fetch or process data: {e}")
-        return [{"error": f"An error occurred: {e}"}]
+            return filtered_units
 
+        except (ConnectionError, Timeout, RequestException) as e:
+            logging.warning(f"Tool: Attempt {attempt + 1} failed: {e}")
+            if attempt < retries - 1:
+                wait = 2 ** attempt
+                logging.info(f"Tool: Retrying in {wait} seconds...")
+                time.sleep(wait)
+            else:
+                logging.error("Tool: All retries failed.")
+                return [{"error": f"Network issue. Could not retrieve data after {retries} attempts. Error: {str(e)}"}]
+        except Exception as ex:
+            logging.exception("Tool: Unexpected error occurred")
+            return [{"error": f"Unexpected error: {str(ex)}"}]
+
+    return [{"error": "Unhandled error occurred while fetching project units."}]
 
 
 @tool
@@ -221,7 +238,18 @@ def save_lead(name: str, phone: str, unit_code: str, notes: str) -> str:
 
 @tool
 def navigate_to_page(url: str) -> str:
-    """Simulates navigation to a specific page within the website."""
+    """Navigates to a specific page URL, simulating a browser action.
+
+    This tool is used by the agent to trigger front-end navigation
+    events in the web application. It logs the navigation attempt and
+    returns a confirmation message to the agent.
+
+    Args:
+        url (str): The page URL to navigate to (e.g., '/master-plan', '/building/3').
+
+    Returns:
+        str: A confirmation message indicating the navigation was successful.
+    """
     logging.info(f"Tool: Simulating navigation to URL: {url}")
     return f"Navigated to {url}."
 
