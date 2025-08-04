@@ -12,6 +12,9 @@ from google.genai.types import (
     EndSensitivity,
     FunctionResponse,
     LiveConnectConfig,
+    SpeechConfig,  
+    VoiceConfig,    
+    PrebuiltVoiceConfig,  
     Modality,
     Part,
     RealtimeInputConfigOrDict,
@@ -61,6 +64,14 @@ class LiveAgent:
 
         self.__live_config = LiveConnectConfig(
             response_modalities=[Modality.AUDIO],
+            speech_config=SpeechConfig(
+                voice_config=VoiceConfig(
+                    prebuilt_voice_config=PrebuiltVoiceConfig(
+                        # You can specify a voice name here if needed
+                        # voice_name="Leda" 
+                    )
+                )
+            ),
             tools=tools,
             system_instruction=Content(
                 parts=[Part.from_text(text=config.get("SYSTEM_PROMPT"))]

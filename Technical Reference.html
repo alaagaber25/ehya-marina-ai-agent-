@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Technical Reference: gemini-2.0-flash-live-001</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <!-- FIX: Replaced lucide-react with the correct vanilla JS version of lucide -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <!-- 
+    Design Rationale:
+    - Theme: Switched to a "reference-grade" dark theme. Dark backgrounds reduce eye strain and are preferred by developers.
+    - Color Palette: A base of slate-900/800 with a vibrant `sky-400` accent for clarity and focus on interactive elements.
+    - Typography: Kept 'Inter' for readability and 'Fira Code' for code, which are excellent choices.
+    - Interactivity: Enhanced hover and active states with the new accent color for better visual feedback.
+    - Icons: Added Lucide icons to section headers for quicker visual scanning and a more polished, modern UI.
+    - Layout: Maintained the effective accordion structure but refined spacing and visual hierarchy for the dark theme.
+    -->
+    <style>
+        body { 
+            font-family: 'Inter', sans-serif; 
+            scroll-behavior: smooth;
+            background-color: #0f172a; /* bg-slate-900 */
+            color: #cbd5e1; /* text-slate-300 */
+        }
+        .font-code { font-family: 'Fira Code', monospace; }
+        .accordion-header { 
+            cursor: pointer; 
+            transition: background-color 0.2s ease-in-out; 
+        }
+        .accordion-header:hover { background-color: #1e293b; } /* bg-slate-800 */
+        .accordion-content { 
+            max-height: 0; 
+            overflow: hidden; 
+            transition: max-height 0.4s ease-in-out, padding 0.4s ease-in-out; 
+        }
+        .accordion-content.open { max-height: 3000px; }
+        .accordion-icon { transition: transform 0.3s; }
+        .rotate-180 { transform: rotate(180deg); }
+        .code-tab { 
+            transition: background-color 0.2s, color 0.2s; 
+            border-bottom: 2px solid transparent;
+        }
+        .code-tab.active { 
+            border-bottom-color: #38bdf8; /* border-sky-400 */
+            color: #f8fafc; /* text-slate-50 */
+        }
+        .code-block { display: none; }
+        .code-block.active { display: block; }
+        .official-link { 
+            color: #38bdf8; /* text-sky-400 */
+            text-decoration: none; 
+            font-weight: 500; 
+        }
+        .official-link:hover { color: #7dd3fc; /* text-sky-300 */ text-decoration: underline; }
+        .voice-card { 
+            transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s; 
+        }
+        .voice-card:hover { 
+            transform: translateY(-4px); 
+            box-shadow: 0 8px 25px -3px rgb(0 0 0 / 0.2); 
+            border-color: #38bdf8; /* border-sky-400 */
+        }
+        .lucide {
+            width: 20px;
+            height: 20px;
+            stroke-width: 2;
+            margin-right: 12px;
+            color: #94a3b8; /* text-slate-400 */
+        }
+        .accordion-header:hover .lucide {
+             color: #cbd5e1; /* text-slate-300 */
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-300">
+
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8 max-w-5xl">
+        
+        <header class="text-left mb-10 pb-6 border-b border-slate-700">
+            <h1 class="text-4xl font-bold text-sky-400">Technical Reference</h1>
+            <p class="mt-2 text-2xl text-slate-400 font-code">gemini-2.0-flash-live-001</p>
+            <p class="mt-4 text-lg text-slate-400 max-w-3xl">A comprehensive developer's guide for integrating and maintaining applications using the `gemini-2.0-flash-live-001` model.</p>
+        </header>
+
+        <div id="accordion-container" class="space-y-3">
+            
+            <!-- Section 1: Core Model Specifications -->
+            <div class="accordion-item bg-slate-800/50 rounded-lg border border-slate-700 shadow-lg">
+                <div class="accordion-header flex justify-between items-center p-5">
+                    <div class="flex items-center">
+                        <i data-lucide="cpu" class="lucide"></i>
+                        <h2 class="text-xl font-semibold text-slate-200">Core Model Specifications</h2>
+                    </div>
+                    <i data-lucide="chevron-down" class="accordion-icon text-slate-500"></i>
+                </div>
+                <div class="accordion-content">
+                    <div class="p-5 border-t border-slate-700">
+                        <p class="text-slate-400 mb-6">This model is a stable, earlier version within the Gemini family, specifically designed for real-time streaming applications. Its key characteristic is its architecture, which dictates its capabilities and ideal use cases.</p>
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div>
+                                <h3 class="font-semibold text-slate-300">Architecture</h3>
+                                <p class="text-slate-100 font-medium text-lg">Half-Cascade Audio</p>
+                                <p class="text-sm text-slate-500 mt-1">A modular pipeline with native audio input and a separate Text-to-Speech (TTS) model for output.</p>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-slate-300">Primary Advantage</h3>
+                                <p class="text-slate-100 font-medium text-lg">Production Reliability</p>
+                                <p class="text-sm text-slate-500 mt-1">Offers higher stability, especially for Tool Use and Grounding with Google Search.</p>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-slate-300">Ideal Use Case</h3>
+                                <p class="text-slate-100 font-medium text-lg">Enterprise & Legacy Systems</p>
+                                <p class="text-sm text-slate-500 mt-1">Best for mission-critical agents or existing systems where this version is integrated.</p>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-slate-300">Known Limitation</h3>
+                                <p class="text-slate-100 font-medium text-lg">No Advanced Features</p>
+                                <p class="text-sm text-slate-500 mt-1">Lacks access to Affective Dialog, Proactive Audio, and other Native Audio features.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 2: Data Handling & Modalities -->
+            <div class="accordion-item bg-slate-800/50 rounded-lg border border-slate-700 shadow-lg">
+                <div class="accordion-header flex justify-between items-center p-5">
+                     <div class="flex items-center">
+                        <i data-lucide="database" class="lucide"></i>
+                        <h2 class="text-xl font-semibold text-slate-200">Data Handling & Modalities</h2>
+                    </div>
+                    <i data-lucide="chevron-down" class="accordion-icon text-slate-500"></i>
+                </div>
+                <div class="accordion-content">
+                    <div class="p-5 border-t border-slate-700 text-slate-300">
+                        <p class="mb-4 text-slate-400">The model has strict requirements for data formats to ensure low-latency streaming. Adhering to these specifications is critical.</p>
+                        <div class="grid md:grid-cols-2 gap-8">
+                            <div>
+                                <h3 class="font-semibold text-lg mb-2 text-slate-200">Supported Modalities (Live API)</h3>
+                                <ul class="space-y-2">
+                                    <li class="flex items-center"><span class="text-green-400 mr-2">✓</span><strong>Input:</strong> Streaming Audio, Text</li>
+                                    <li class="flex items-center"><span class="text-green-400 mr-2">✓</span><strong>Output:</strong> Streaming Audio, Text</li>
+                                    <li class="flex items-center"><span class="text-red-400 mr-2">✗</span><strong>Not Supported:</strong> Direct Video/Image input.</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-lg mb-2 text-slate-200">Session & Context Limits</h3>
+                                <ul class="list-disc list-inside text-slate-400">
+                                    <li><strong>Audio-only Session:</strong> ~15 min limit.</li>
+                                    <li><strong>WebSocket Connection:</strong> ~10 min limit.</li>
+                                    <li><strong>Long-running Sessions:</strong> Must enable Context Compression and Session Resumption.</li>
+                                    <li><strong>Disconnection Notice:</strong> Server sends a `GoAway` message.</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <h3 class="font-semibold text-lg mt-6 mb-2 text-slate-200">Audio Format Specifications</h3>
+                        <table class="min-w-full border border-slate-700 text-left">
+                            <thead class="bg-slate-900">
+                                <tr>
+                                    <th class="p-3 font-semibold">Stream</th><th class="p-3 font-semibold">Sample Rate</th><th class="p-3 font-semibold">Encoding</th><th class="p-3 font-semibold">Channels</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-slate-800 divide-y divide-slate-700">
+                                <tr>
+                                    <td class="p-3 font-medium text-slate-300">Input (Client → Server)</td><td class="p-3 font-code">16000 Hz</td><td class="p-3 font-code">16-bit PCM (little-endian)</td><td class="p-3 font-code">1 (Mono)</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-3 font-medium text-slate-300">Output (Server → Client)</td><td class="p-3 font-code">24000 Hz</td><td class="p-3 font-code">16-bit PCM (little-endian)</td><td class="p-3 font-code">1 (Mono)</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div class="mt-4 p-4 bg-sky-900/30 border-l-4 border-sky-400 text-sky-200 rounded-r-lg">
+                            <h4 class="font-bold">Design Rationale: Asymmetric Sample Rates</h4>
+                            <p class="text-sm mt-1 text-sky-300">The <strong>16kHz input</strong> is optimized for bandwidth efficiency. The higher <strong>24kHz output</strong> allows the model to generate more crisp, high-fidelity audio, optimizing for user experience.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 3: Voice & Speech Control -->
+            <div class="accordion-item bg-slate-800/50 rounded-lg border border-slate-700 shadow-lg">
+                <div class="accordion-header flex justify-between items-center p-5">
+                    <div class="flex items-center">
+                        <i data-lucide="volume-2" class="lucide"></i>
+                        <h2 class="text-xl font-semibold text-slate-200">Voice & Speech Control</h2>
+                    </div>
+                    <i data-lucide="chevron-down" class="accordion-icon text-slate-500"></i>
+                </div>
+                <div class="accordion-content">
+                    <div class="p-5 border-t border-slate-700">
+                         <p class="text-slate-400 mb-2">This model supports a specific, curated set of 8 voices. Using a voice name not on this list will result in an error.</p>
+                         <div class="mt-4 p-4 bg-slate-900/50 rounded-lg border border-slate-700">
+                            <h4 class="font-bold text-slate-200">Control Paradigm: Declarative vs. Expressive</h4>
+                            <p class="text-sm mt-1 text-slate-400">This model's Half-Cascade architecture uses a **declarative** control paradigm (selecting a voice name). This contrasts with Native Audio models, which use an **expressive** paradigm (e.g., "speak more cheerfully").</p>
+                        </div>
+                        <p class="text-amber-200 bg-amber-900/30 border-l-4 border-amber-400 p-4 rounded-r-lg text-sm my-6"><strong>Important:</strong> The voice <code class="font-code bg-amber-400/20 text-amber-200 px-1 py-0.5 rounded">'Sadaltager'</code> is <strong>not compatible</strong> with this model. You must use one of the voices below.</p>
+                        <div id="voice-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                            <!-- Voices will be injected here by JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 4: API Usage -->
+            <div class="accordion-item bg-slate-800/50 rounded-lg border border-slate-700 shadow-lg">
+                <div class="accordion-header flex justify-between items-center p-5">
+                    <div class="flex items-center">
+                        <i data-lucide="code-2" class="lucide"></i>
+                        <h2 class="text-xl font-semibold text-slate-200">API Usage & Interaction Dynamics</h2>
+                    </div>
+                    <i data-lucide="chevron-down" class="accordion-icon text-slate-500"></i>
+                </div>
+                <div class="accordion-content">
+                    <div class="p-5 border-t border-slate-700 text-slate-300">
+                        <p class="mb-4 text-slate-400">Interaction occurs over a stateful WebSocket connection. Understanding the interruption protocol is key.</p>
+                        <h3 class="font-semibold text-lg mb-2 text-slate-200">Interruption Protocol</h3>
+                        <ul class="list-disc list-inside text-slate-400">
+                            <li>User interruption immediately cancels the model's in-flight generation.</li>
+                            <li>The server sends a `BidiGenerateContentServerContent` message to report the interruption.</li>
+                            <li>In-progress tool calls are also canceled and reported.</li>
+                        </ul>
+                        <h3 class="font-semibold text-lg mt-6 mb-2 text-slate-200">Request Structure Example</h3>
+                        <p class="mb-4 text-slate-400">The following shows how to configure a session to use a specific voice.</p>
+                        <div class="code-container bg-slate-900 rounded-lg border border-slate-700">
+                            <div class="flex border-b border-slate-700 px-2">
+                                <button class="code-tab active py-2 px-4 text-sm font-medium" data-lang="python">Python</button>
+                                <button class="code-tab py-2 px-4 text-sm font-medium text-slate-400" data-lang="json">JSON Config</button>
+                            </div>
+                            <div class="relative">
+                                <pre class="p-4 overflow-x-auto"><code class="language-python code-block active font-code text-sm">
+# Python SDK Example
+import google.genai as genai
+from google.genai import types
+
+# Must select a voice from the compatible list
+voice_name = "Puck" 
+
+config = types.LiveConnectConfig(
+    speech_config=types.SpeechConfig(
+        voice_config=types.VoiceConfig(
+            prebuilt_voice_config=types.PrebuiltVoiceConfig(
+                voice_name=voice_name,
+            )
+        ),
+    ),
+    # Other configs like VAD settings go here
+)
+
+# Use this config when connecting
+# client.aio.live.connect(
+#   model='models/gemini-2.0-flash-live-001',
+#   config=config
+# )
+                                </code></pre>
+                                <pre class="p-4 overflow-x-auto"><code class="language-json code-block font-code text-sm">
+// Equivalent JSON configuration payload
+{
+  "speechConfig": {
+    "voiceConfig": {
+      "prebuiltVoiceConfig": {
+        "voiceName": "Puck"
+      }
+    }
+  },
+  "realtimeInputConfig": {
+    "automaticActivityDetection": {
+      "startOfSpeechSensitivity": "START_SENSITIVITY_LOW",
+      "endOfSpeechSensitivity": "END_SENSITIVITY_LOW"
+    }
+  }
+}
+                                </code></pre>
+                                <button class="copy-btn absolute top-2 right-2 bg-slate-600 hover:bg-slate-500 text-slate-200 text-xs font-semibold py-1 px-2 rounded">Copy</button>
+                            </div>
+                        </div>
+                        <h3 class="font-semibold text-lg mt-6 mb-2 text-slate-200">Authentication & Quotas</h3>
+                        <ul class="list-disc list-inside text-slate-400">
+                            <li><strong>Authentication:</strong> Standard Google Cloud auth. A server-to-server implementation is recommended.</li>
+                            <li><strong>Quotas:</strong> Subject to standard Vertex AI API quotas. Check your GCP project for limits.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Section 5: Versioning -->
+            <div class="accordion-item bg-slate-800/50 rounded-lg border border-slate-700 shadow-lg">
+                <div class="accordion-header flex justify-between items-center p-5">
+                    <div class="flex items-center">
+                        <i data-lucide="git-branch-plus" class="lucide"></i>
+                        <h2 class="text-xl font-semibold text-slate-200">Versioning & Future-Proofing</h2>
+                    </div>
+                    <i data-lucide="chevron-down" class="accordion-icon text-slate-500"></i>
+                </div>
+                <div class="accordion-content">
+                    <div class="p-5 border-t border-slate-700 text-slate-300">
+                        <p class="mb-4 text-slate-400">While stable, this is an older model. Consider the following for long-term maintenance.</p>
+                        <h3 class="font-semibold text-lg mt-6 mb-2 text-slate-200">Migration to Newer Models</h3>
+                        <ul class="list-disc list-inside text-slate-400 space-y-2">
+                            <li><strong>To `gemini-live-2.5-flash-preview`:</strong> Recommended path for staying on the Half-Cascade architecture. Largely compatible API.</li>
+                            <li><strong>To Native Audio (`gemini-2.5...-native-audio...`):</strong> More significant migration. Unlocks a larger voice library and prompt-based style control.</li>
+                        </ul>
+                        <h3 class="font-semibold text-lg mt-6 mb-2 text-slate-200">Best Practices for Code Updates</h3>
+                         <ul class="list-disc list-inside text-slate-400 space-y-2">
+                            <li><strong>Isolate Model Name:</strong> Store the model name in a configuration variable, not hardcoded.</li>
+                            <li><strong>Abstract Voice Selection:</strong> Create a helper function for voice configuration to simplify future migrations.</li>
+                            <li><strong>Monitor Documentation:</strong> Regularly check official Google Cloud docs for deprecation notices.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 6: Implementation Pathway -->
+            <div class="accordion-item bg-slate-800/50 rounded-lg border border-slate-700 shadow-lg">
+                <div class="accordion-header flex justify-between items-center p-5">
+                    <div class="flex items-center">
+                        <i data-lucide="milestone" class="lucide"></i>
+                        <h2 class="text-xl font-semibold text-slate-200">Implementation Pathway</h2>
+                    </div>
+                    <i data-lucide="chevron-down" class="accordion-icon text-slate-500"></i>
+                </div>
+                <div class="accordion-content">
+                    <div class="p-5 border-t border-slate-700 text-slate-300">
+                        <p class="mb-4 text-slate-400">Recommended path: **High-Reliability Enterprise Agent** where stability is paramount.</p>
+                        <ul class="list-disc list-inside text-slate-400 space-y-3">
+                            <li><strong>Architecture:</strong> Use the native **Half-Cascade** architecture for its documented stability.</li>
+                            <li><strong>Session Management:</strong> Implement **Context Window Compression** and **Session Resumption** from the start.</li>
+                            <li><strong>VAD Tuning:</strong> Configure Voice Activity Detection for lower sensitivity to prevent accidental interruptions.</li>
+                            <li><strong>Implementation:</strong> A **Server-to-Server** connection is strongly recommended to secure credentials.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 7: Official Docs -->
+            <div class="accordion-item bg-slate-800/50 rounded-lg border border-slate-700 shadow-lg">
+                <div class="accordion-header flex justify-between items-center p-5">
+                    <div class="flex items-center">
+                        <i data-lucide="book-marked" class="lucide"></i>
+                        <h2 class="text-xl font-semibold text-slate-200">Official Documentation & References</h2>
+                    </div>
+                    <i data-lucide="chevron-down" class="accordion-icon text-slate-500"></i>
+                </div>
+                <div class="accordion-content">
+                    <div class="p-5 border-t border-slate-700 text-slate-300">
+                        <p class="mb-4 text-slate-400">For the most current information, always refer to the official Google Cloud documentation.</p>
+                        <ul class="list-disc list-inside space-y-2">
+                            <li><a href="https://cloud.google.com/vertex-ai/generative-ai/docs/live-api" class="official-link" target="_blank" rel="noopener noreferrer">Vertex AI Live API Official Documentation</a></li>
+                            <li><a href="https://cloud.google.com/vertex-ai/generative-ai/docs/learn/models" class="official-link" target="_blank" rel="noopener noreferrer">Gemini Models Overview</a></li>
+                            <li><a href="https://cloud.google.com/vertex-ai/docs/quotas" class="official-link" target="_blank" rel="noopener noreferrer">API Quotas and Limits</a></li>
+                            <li><a href="https://cloud.google.com/python/docs/reference/aiplatform/latest" class="official-link" target="_blank" rel="noopener noreferrer">Python Client Library Reference</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <footer class="text-center mt-12 pt-8 border-t border-slate-700">
+            <p class="text-slate-500">Generated from the "A Technical Deep Dive into Google's Vertex AI Live API" report.</p>
+            <p class="text-xs text-slate-600 mt-1">Last Updated: August 4, 2025</p>
+        </footer>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Lucide Icons
+    lucide.createIcons();
+
+    const accordionContainer = document.getElementById('accordion-container');
+    
+    // Voice data for gemini-2.0-flash-live-001 (Half-Cascade)
+    const voices = [
+        { name: 'Puck', desc: 'Upbeat' }, { name: 'Charon', desc: 'Informative' },
+        { name: 'Kore', desc: 'Firm' }, { name: 'Fenrir', desc: 'Excitable' },
+        { name: 'Aoede', desc: 'Breezy, Upbeat' }, { name: 'Leda', desc: 'Youthful' },
+        { name: 'Orus', desc: 'Firm' }, { name: 'Zephyr', desc: 'Bright' }
+    ];
+
+    const voiceGrid = document.getElementById('voice-grid');
+    if (voiceGrid) {
+        voices.forEach(voice => {
+            const card = document.createElement('div');
+            card.className = 'voice-card bg-slate-800 border-2 border-slate-700 rounded-lg p-4 text-center';
+            card.innerHTML = `
+                <p class="font-semibold text-sky-400">${voice.name}</p>
+                <p class="text-sm text-slate-400">${voice.desc}</p>
+            `;
+            voiceGrid.appendChild(card);
+        });
+    }
+
+    accordionContainer.addEventListener('click', (e) => {
+        const header = e.target.closest('.accordion-header');
+        if (header) {
+            const item = header.parentElement;
+            const content = item.querySelector('.accordion-content');
+            const icon = item.querySelector('.accordion-icon');
+            
+            content.classList.toggle('open');
+            icon.classList.toggle('rotate-180');
+        }
+    });
+
+    // Auto-open the first accordion item
+    const firstItem = accordionContainer.querySelector('.accordion-item');
+    if (firstItem) {
+        firstItem.querySelector('.accordion-content').classList.add('open');
+        firstItem.querySelector('.accordion-icon').classList.add('rotate-180');
+    }
+
+    // Code block functionality
+    const codeContainers = document.querySelectorAll('.code-container');
+    codeContainers.forEach(container => {
+        const tabs = container.querySelectorAll('.code-tab');
+        const blocks = container.querySelectorAll('.code-block');
+        const copyBtn = container.querySelector('.copy-btn');
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const lang = tab.dataset.lang;
+                
+                tabs.forEach(t => {
+                    t.classList.remove('active');
+                    t.classList.add('text-slate-400');
+                });
+                
+                tab.classList.add('active');
+                tab.classList.remove('text-slate-400');
+
+                blocks.forEach(block => {
+                    block.classList.toggle('active', block.classList.contains('language-' + lang));
+                });
+            });
+        });
+
+        if (copyBtn) {
+            copyBtn.addEventListener('click', () => {
+                const activeBlock = container.querySelector('.code-block.active');
+                if (activeBlock) {
+                    // Using document.execCommand as a fallback for iframe environments
+                    const textarea = document.createElement('textarea');
+                    textarea.value = activeBlock.textContent.trim();
+                    document.body.appendChild(textarea);
+                    textarea.select();
+                    try {
+                        document.execCommand('copy');
+                        const originalText = copyBtn.textContent;
+                        copyBtn.textContent = 'Copied!';
+                        setTimeout(() => {
+                            copyBtn.textContent = 'Copy';
+                        }, 2000);
+                    } catch (err) {
+                        console.error('Fallback: Oops, unable to copy', err);
+                    }
+                    document.body.removeChild(textarea);
+                }
+            });
+        }
+    });
+});
+</script>
+
+</body>
+</html>
