@@ -41,7 +41,7 @@ class MessageType(StrEnum):
     OUTPUT_TRANSCRIPTION = auto()
     INTERRUPTION = auto()  # Add interruption message type
     TOOL_CALL_CANCELLED = auto()  # Add tool call cancellation
-    TOOL_CALL_RESPONSE = auto()  
+    TOOL_CALL_RESPONSE = auto()
 
 
 @dataclass
@@ -67,7 +67,7 @@ class LiveAgent:
             ),
             input_audio_transcription=audio_transcription_config,
             output_audio_transcription=audio_transcription_config,
-            realtime_input_config=realtime_input_config, # type: ignore
+            realtime_input_config=realtime_input_config,  # type: ignore
         )
 
         self.__model = config.get("MODEL")
@@ -198,7 +198,7 @@ class LiveAgent:
 
             # Handle tool calls
             if message.tool_call and message.tool_call.function_calls:
-                function_responses = []
+                function_responses: list[FunctionResponse] = []
                 for fc in message.tool_call.function_calls:
                     # Skip if this tool call was already cancelled
                     if fc.id in self._interrupted_tool_calls:
@@ -212,15 +212,15 @@ class LiveAgent:
                             function_response = FunctionResponse(
                                 name=fc.name, response=response, id=fc.id
                             )
+                            yield AgentMessage(
+                                type=MessageType.TOOL_CALL_RESPONSE,
+                                data=response,
+                            )
                             function_responses.append(function_response)
                         except Exception as e:
                             logger.error(f"Tool call {fc.name} failed: {e}")
 
                 if function_responses:
-                    yield AgentMessage(
-                        type=MessageType.TOOL_CALL_RESPONSE,
-                        data=function_responses,
-                    )
                     await self._session.send_tool_response(
                         function_responses=function_responses
                     )
