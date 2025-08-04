@@ -198,7 +198,7 @@ class LiveAgent:
 
             # Handle tool calls
             if message.tool_call and message.tool_call.function_calls:
-                function_responses = []
+                function_responses: list[FunctionResponse] = []
                 for fc in message.tool_call.function_calls:
                     # Skip if this tool call was already cancelled
                     if fc.id in self._interrupted_tool_calls:
@@ -212,15 +212,15 @@ class LiveAgent:
                             function_response = FunctionResponse(
                                 name=fc.name, response=response, id=fc.id
                             )
+                            yield AgentMessage(
+                                type=MessageType.TOOL_CALL_RESPONSE,
+                                data=response,
+                            )
                             function_responses.append(function_response)
                         except Exception as e:
                             logger.error(f"Tool call {fc.name} failed: {e}")
 
                 if function_responses:
-                    yield AgentMessage(
-                        type=MessageType.TOOL_CALL_RESPONSE,
-                        data=function_responses,
-                    )
                     await self._session.send_tool_response(
                         function_responses=function_responses
                     )

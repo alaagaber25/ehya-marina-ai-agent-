@@ -22,87 +22,6 @@ def clear_unit_cache():
     logging.info("Tool Cache: Last search results cache has been cleared.")
 
 @tool
-def search_units_in_memory(
-    unit_code: Optional[str] = None,
-    floor: Optional[str] = None,
-    building: Optional[str] = None,
-    availability: Optional[str] = None,
-    unit_type: Optional[str] = None,
-    min_area: Optional[float] = None,
-    max_area: Optional[float] = None,
-    pick_random: bool = False
-) -> List[Dict[str, Any]]:
-    """
-    Filters the most recent unit search results stored in memory.
-
-    Use this tool to handle **follow-up queries** after an initial unit search. It allows you to answer user questions such as:
-    - "Which of these units is available?"
-    - "Which of them is on the fifth floor?"
-    - "Which ones are in Building 1?"
-    - "Do you have any unit that matches my filters?"
-
-    Supported parameters:
-    - `unit_code`: Returns a specific unit by code (exact match).
-    - `floor`: Filters the last results to show only units on that floor.
-    - `building`: Filters results to a specific building.
-    - `availability`: Filters by availability status (e.g., `"available"`).
-    - `unit_type`: Filters by unit type (e.g., `"2 BEDROOM"`).
-    - `min_area` and `max_area`: Filters based on unit area range.
-    - `pick_random`: If set to `True`, returns a single random unit from the filtered results.
-
-    This tool must only be used **after** a previous search result exists in memory. If no prior results are available, it returns an appropriate error message.
-    """
-
-    global last_search_results
-    
-    if not last_search_results:
-        logging.warning("Tool: Cannot search memory because the last search result is empty.")
-        return [{"error": "I don't have any previous search results to filter. Please start a new search."}]
-
-    # Start with the last known results
-    results_to_filter = last_search_results
-
-    # Handle the specific case of asking for a single unit by code
-    if unit_code:
-        logging.info(f"Tool: Searching for specific unit '{unit_code}' in LAST SEARCH RESULTS.")
-        for unit in results_to_filter:
-            if unit.get('code', '').lower() == unit_code.lower():
-                logging.info(f"Tool: Found unit '{unit_code}'.")
-                return [unit] # Return as a list with one item
-        return [{"error": f"Sorry, I couldn't find unit '{unit_code}' in the results I just showed you."}]
-
-    # Apply filters if provided
-    if floor:
-        results_to_filter = [u for u in results_to_filter if u.get('floor') == floor]
-    if building:
-        results_to_filter = [u for u in results_to_filter if u.get('building', '').lower() == building.lower()]
-    if availability:
-        results_to_filter = [u for u in results_to_filter if u.get('availability', '').lower() == availability.lower()]
-    if unit_type:
-        results_to_filter = [u for u in results_to_filter if unit_type.lower() in u.get('unit_type', '').lower()]
-    if min_area is not None:
-        results_to_filter = [u for u in results_to_filter if float(u.get('unit_area', 0)) >= min_area]
-    if max_area is not None:
-        results_to_filter = [u for u in results_to_filter if float(u.get('unit_area', 0)) <= max_area]
-
-    # Handle picking a random unit from the (potentially filtered) results
-    if pick_random:
-        if results_to_filter:
-            logging.info("Tool: Picking a random unit from the filtered results.")
-            return [random.choice(results_to_filter)] # Return as a list with one item
-        else:
-            return [{"error": "No units matched the criteria to pick a random one from."}]
-
-    logging.info(f"Tool: Returning {len(results_to_filter)} units after filtering memory.")
-    return results_to_filter
-
-
-last_search_results: List[Dict[str, Any]] = []
-scraper = cloudscraper.create_scraper(
-    browser={"custom": "ScraperBot/1.0"}
-)
-
-@tool
 def get_project_units(
     project_id: str,
     unit_code: Optional[str] = None,
@@ -114,8 +33,15 @@ def get_project_units(
     max_area: Optional[float] = None
 ) -> List[Dict[str, Any]]:
     """
-    Tool: Fetches units from the real estate API and applies filters.
-    Uses retry mechanism and returns a summary if results are large.
+    **CRITICAL: Use this tool for the FIRST or INITIAL search for units.**
+    This tool connects to the main database to fetch a fresh list of properties based on the user's initial criteria.
+
+    You MUST use this tool when:
+    - The user starts a new conversation and asks for any type of unit.
+    - The user's request is the beginning of a search and there are no previous results in memory.
+    - The user explicitly asks to start a new or different search.
+
+    Example: If the user's first message is "I want to see available units in building 1 on the third floor," you MUST use this tool, not search_units_in_memory.
     """
     global last_search_results
     api_url = f"https://realestate-api.voom.cc/api/v1/companies/{project_id}/units"
@@ -182,6 +108,90 @@ def get_project_units(
 
     return [{"error": "Unhandled error occurred while fetching project units."}]
 
+@tool
+def search_units_in_memory(
+    unit_code: Optional[str] = None,
+    floor: Optional[str] = None,
+    building: Optional[str] = None,
+    availability: Optional[str] = None,
+    unit_type: Optional[str] = None,
+    min_area: Optional[float] = None,
+    max_area: Optional[float] = None,
+    pick_random: bool = False
+) -> List[Dict[str, Any]]:
+    """
+    Filters, queries, or selects from a list of units previously fetched by `get_project_units`.
+
+    **CRITICAL RULE: This tool MUST ONLY be used for follow-up questions to refine results that are
+    already in memory from a successful `get_project_units` call in a previous turn.**
+    DO NOT use this tool for a user's initial search query. It will fail if no units have been fetched first.
+
+    This tool is essential for answering questions like:
+    - "Okay, which of those are available?"
+    - "Show me the ones on the fifth floor from that list."
+    - "Can you tell me more about unit G-05?"
+    - "Are any of the 2-bedroom units left?"
+
+    Supported parameters:
+    - `unit_code`: Returns a specific unit by code (exact match).
+    - `floor`: Filters the last results to show only units on that floor.
+    - `building`: Filters results to a specific building.
+    - `availability`: Filters by availability status (e.g., `"available"`).
+    - `unit_type`: Filters by unit type (e.g., `"2 BEDROOM"`).
+    - `min_area` and `max_area`: Filters based on unit area range.
+    - `pick_random`: If set to `True`, returns a single random unit from the filtered results.
+
+    This tool must only be used **after** a previous search result exists in memory. If no prior results are available, it returns an appropriate error message.
+    """
+
+    global last_search_results
+    
+    if not last_search_results:
+        logging.warning("Tool: Cannot search memory because the last search result is empty.")
+        return [{"error": "I don't have any previous search results to filter. Please start a new search."}]
+
+    # Start with the last known results
+    results_to_filter = last_search_results
+
+    # Handle the specific case of asking for a single unit by code
+    if unit_code:
+        logging.info(f"Tool: Searching for specific unit '{unit_code}' in LAST SEARCH RESULTS.")
+        for unit in results_to_filter:
+            if unit.get('code', '').lower() == unit_code.lower():
+                logging.info(f"Tool: Found unit '{unit_code}'.")
+                return [unit] # Return as a list with one item
+        return [{"error": f"Sorry, I couldn't find unit '{unit_code}' in the results I just showed you."}]
+
+    # Apply filters if provided
+    if floor:
+        results_to_filter = [u for u in results_to_filter if u.get('floor') == floor]
+    if building:
+        results_to_filter = [u for u in results_to_filter if u.get('building', '').lower() == building.lower()]
+    if availability:
+        results_to_filter = [u for u in results_to_filter if u.get('availability', '').lower() == availability.lower()]
+    if unit_type:
+        results_to_filter = [u for u in results_to_filter if unit_type.lower() in u.get('unit_type', '').lower()]
+    if min_area is not None:
+        results_to_filter = [u for u in results_to_filter if float(u.get('unit_area', 0)) >= min_area]
+    if max_area is not None:
+        results_to_filter = [u for u in results_to_filter if float(u.get('unit_area', 0)) <= max_area]
+
+    # Handle picking a random unit from the (potentially filtered) results
+    if pick_random:
+        if results_to_filter:
+            logging.info("Tool: Picking a random unit from the filtered results.")
+            return [random.choice(results_to_filter)] # Return as a list with one item
+        else:
+            return [{"error": "No units matched the criteria to pick a random one from."}]
+
+    logging.info(f"Tool: Returning {len(results_to_filter)} units after filtering memory.")
+    return results_to_filter
+
+
+last_search_results: List[Dict[str, Any]] = []
+scraper = cloudscraper.create_scraper(
+    browser={"custom": "ScraperBot/1.0"}
+)
 
 @tool
 def save_lead(name: str, phone: str, unit_code: str, notes: str) -> str:
@@ -237,25 +247,7 @@ def save_lead(name: str, phone: str, unit_code: str, notes: str) -> str:
 
 
 
-@tool
-def navigate_to_page(url: str) -> str:
-    """Navigates to a specific page URL, simulating a browser action.
 
-    This tool is used by the agent to trigger front-end navigation
-    events in the web application. It logs the navigation attempt and
-    returns a confirmation message to the agent.
-
-    Args:
-        url (str): The page URL to navigate to (e.g., '/master-plan', '/building/3').
-
-    Returns:
-        str: A confirmation message indicating the navigation was successful.
-    """
-    navigation_action = {
-        "action": "navigate",
-        "url": url
-    }
-    return json.dumps(navigation_action)
 
 @tool
 def click_element(selector: str) -> str:

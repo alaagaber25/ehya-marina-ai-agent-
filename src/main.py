@@ -52,17 +52,17 @@ async def websocket_endpoint(ws: WebSocket, db: AsyncSession = Depends(get_db)):
         """Send JSON message to client and accumulate for later DB save"""
         try:
             timestamp = datetime.now()
-
+            logger.debug(f"Sending {type_} message")
             # Send message to client immediately (streaming)
             response = {
-                "type": f"{type_}-delta",
+                "type": type_,
                 "data": data,
                 "chat_id": str(chat.id),
                 "timestamp": timestamp.isoformat(),
             }
 
             await ws.send_json(response)
-            logger.debug(f"Sent {type_} delta")
+            logger.debug(f"Sent {type_} to client")
 
             # Accumulate message pieces (don't save to DB yet)
             if content_type in [
@@ -86,22 +86,22 @@ async def websocket_endpoint(ws: WebSocket, db: AsyncSession = Depends(get_db)):
             "tool_call_response", data, MessageType.TOOL_CALL_RESPONSE
         ),
         MessageType.TEXT: lambda data: send_json_streaming(
-            "text", data, MessageType.TEXT
+            "text-delta", data, MessageType.TEXT
         ),
         MessageType.INPUT_TRANSCRIPTION: lambda data: send_json_streaming(
-            "input_transcription", data, MessageType.INPUT_TRANSCRIPTION
+            "input_transcription-delta", data, MessageType.INPUT_TRANSCRIPTION
         ),
         MessageType.OUTPUT_TRANSCRIPTION: lambda data: send_json_streaming(
-            "output_transcription", data, MessageType.OUTPUT_TRANSCRIPTION
+            "output_transcription-delta", data, MessageType.OUTPUT_TRANSCRIPTION
         ),
         MessageType.AUDIO: lambda data: send_json_streaming(
-            "audio", AudioCodec.to_wav(data), MessageType.AUDIO
+            "audio-delta", AudioCodec.to_wav(data), MessageType.AUDIO
         ),
         MessageType.INTERRUPTION: lambda data: send_json_streaming(
             "interruption", {"interrupted": data}, MessageType.INTERRUPTION
         ),
-        MessageType.TOOL_CALL_CANCELLED: lambda data: send_json_streaming(
-            "tool_cancelled", {"cancelled_ids": data}, MessageType.TOOL_CALL
+        MessageType.TOOL_CALL_RESPONSE: lambda data: send_json_streaming(
+            "tool_call_response", data, MessageType.TOOL_CALL_RESPONSE
         ),
     }
 
