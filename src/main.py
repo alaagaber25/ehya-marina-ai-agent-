@@ -82,9 +82,6 @@ async def websocket_endpoint(ws: WebSocket, db: AsyncSession = Depends(get_db)):
 
     # Fixed message handlers with proper content_type
     handle_message_type = {
-        MessageType.TOOL_CALL_RESPONSE: lambda data: send_json_streaming(
-            "tool_call_response", data, MessageType.TOOL_CALL_RESPONSE
-        ),
         MessageType.TEXT: lambda data: send_json_streaming(
             "text-delta", data, MessageType.TEXT
         ),

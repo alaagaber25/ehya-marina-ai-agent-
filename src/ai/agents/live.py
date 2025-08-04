@@ -41,7 +41,7 @@ class MessageType(StrEnum):
     OUTPUT_TRANSCRIPTION = auto()
     INTERRUPTION = auto()  # Add interruption message type
     TOOL_CALL_CANCELLED = auto()  # Add tool call cancellation
-    TOOL_CALL_RESPONSE = auto()  
+    TOOL_CALL_RESPONSE = auto()
 
 
 @dataclass
@@ -67,7 +67,7 @@ class LiveAgent:
             ),
             input_audio_transcription=audio_transcription_config,
             output_audio_transcription=audio_transcription_config,
-            realtime_input_config=realtime_input_config, # type: ignore
+            realtime_input_config=realtime_input_config,  # type: ignore
         )
 
         self.__model = config.get("MODEL")
