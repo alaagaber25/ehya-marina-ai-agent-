@@ -10,7 +10,7 @@ from ai.tools import (
     get_project_units,
     search_units_in_memory,
     # navigate_to_page,
-    click_element,
+    # click_element,
     save_lead,
     # clear_unit_cache, # this is bad!
 )
@@ -25,7 +25,7 @@ def Voomi():
         get_project_units,
         search_units_in_memory,
         # navigate_to_page,
-        click_element,
+        # click_element,
         save_lead,
     ]
 

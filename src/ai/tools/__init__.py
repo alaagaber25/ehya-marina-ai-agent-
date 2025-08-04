@@ -229,9 +229,9 @@ def save_lead(name: str, phone: str, unit_code: str, notes: str) -> str:
         
         # Check if file exists to write header only once
         import os
-        file_exists = os.path.isfile('data/leads.csv')
-        
-        with open('data/leads.csv', 'a', newline='', encoding='utf-8-sig') as f:
+        file_exists = os.path.isfile(r'src/ai/tools/data/leads.csv')
+
+        with open(r'src/ai/tools/data/leads.csv', 'a', newline='', encoding='utf-8-sig') as f:
             writer = csv.DictWriter(f, fieldnames=header)
             if not file_exists:
                 writer.writeheader()  # Write header if file is new
@@ -246,11 +246,3 @@ def save_lead(name: str, phone: str, unit_code: str, notes: str) -> str:
         return error_message
 
 
-
-
-
-@tool
-def click_element(selector: str) -> str:
-    """Simulates clicking on a specific element on the page."""
-    logging.info(f"Tool: Simulating click on element: {selector}")
-    return f"Clicked element with selector '{selector}'."
