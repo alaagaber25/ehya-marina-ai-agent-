@@ -41,6 +41,7 @@ class MessageType(StrEnum):
     OUTPUT_TRANSCRIPTION = auto()
     INTERRUPTION = auto()  # Add interruption message type
     TOOL_CALL_CANCELLED = auto()  # Add tool call cancellation
+    TOOL_CALL_RESPONSE = auto()  
 
 
 @dataclass
@@ -216,6 +217,10 @@ class LiveAgent:
                             logger.error(f"Tool call {fc.name} failed: {e}")
 
                 if function_responses:
+                    yield AgentMessage(
+                        type=MessageType.TOOL_CALL_RESPONSE,
+                        data=function_responses,
+                    )
                     await self._session.send_tool_response(
                         function_responses=function_responses
                     )
