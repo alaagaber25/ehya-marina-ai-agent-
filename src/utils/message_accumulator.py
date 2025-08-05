@@ -31,12 +31,13 @@ class MessageAccumulator:
         elif message_type == MessageType.AUDIO:
             # Ensure audio data is bytes
             if isinstance(data, str):
-                logger.warning("Received audio as string, skipping...")
+                # logger.warning("Received audio as string, skipping...")
                 return
             elif isinstance(data, bytes):
                 self.audio_pieces.append(data)
             else:
-                logger.warning(f"Unexpected audio data type: {type(data)}")
+                # logger.warning(f"Unexpected audio data type: {type(data)}")
+                pass
         elif message_type == MessageType.OUTPUT_TRANSCRIPTION:
             self.transcription_pieces.append(str(data))
 

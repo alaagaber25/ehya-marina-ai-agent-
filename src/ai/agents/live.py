@@ -224,6 +224,7 @@ class LiveAgent:
                         if fc.args is None:
                             fc.args = {}
                         try:
+                            logger.info(f"\n\nCalling tool: {fc.name} with args: {fc.args}\n\n")
                             response = self.__functions_to_call[fc.name](**fc.args)
                             function_response = FunctionResponse(
                                 name=fc.name, response=response, id=fc.id

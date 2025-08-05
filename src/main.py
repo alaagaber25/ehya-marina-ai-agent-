@@ -16,7 +16,7 @@ from ai.prompts import live
 from db import DatabaseService, MessageDirection, create_tables, get_db
 from utils.audio_codec import AudioCodec
 from utils.message_accumulator import MessageAccumulator
-
+logging.getLogger('google_genai.types').setLevel(logging.ERROR)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
