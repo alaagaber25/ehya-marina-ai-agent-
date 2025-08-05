@@ -61,14 +61,19 @@ class LiveAgent:
         # Build the live config with improved VAD settings
         audio_transcription_config = self.__get_transcroption_config(config)
         realtime_input_config = self.__get_realtime_input_config(config)
-
+        voice_name = config.get("VOICE_NAME")
+        if not voice_name:
+            logger.warning(
+                "VOICE_NAME not specified in config, using default voice."
+            )
+            voice_name = "Leda"  # Default voice if not specified
         self.__live_config = LiveConnectConfig(
             response_modalities=[Modality.AUDIO],
             speech_config=SpeechConfig(
                 voice_config=VoiceConfig(
                     prebuilt_voice_config=PrebuiltVoiceConfig(
                         # You can specify a voice name here if needed
-                        # voice_name="Leda" 
+                        voice_name=voice_name
                     )
                 )
             ),

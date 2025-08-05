@@ -8,7 +8,7 @@ from fastapi import Depends, FastAPI, WebSocket
 from fastapi.websockets import WebSocketDisconnect, WebSocketState
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
-
+import json
 import config as config
 from ai.agents.live import LiveAgent, MessageType
 from ai.agents.voomi import Voomi
@@ -40,7 +40,13 @@ class ClientData(BaseModel):
 @app.websocket("/ws")
 async def websocket_endpoint(ws: WebSocket, db: AsyncSession = Depends(get_db)):
     await ws.accept()
-
+    voice_config_raw= await ws.receive()
+    text_data = voice_config_raw.get("text")
+    parsed_data = json.loads(text_data)
+    DIALECT = parsed_data.get("data", {}).get("dialect")
+    PERSONA = parsed_data.get("data", {}).get("persona")
+    logger.info(f"WebSocket connected with dialect: {DIALECT}, persona: {PERSONA}")
+    VOICE_NAME = "Leda" if PERSONA == "female" else "Charon"
     # Create a new chat session
     chat = await DatabaseService.create_chat(db, "Live Chat Session")
     voomi = Voomi()
@@ -109,6 +115,8 @@ async def websocket_endpoint(ws: WebSocket, db: AsyncSession = Depends(get_db)):
                 "ENABLE_TRANSCRIPTION": True,
                 "MODEL": "gemini-2.0-flash-live-001",
                 "SYSTEM_PROMPT": live.SYSTEM_PROMPT,
+                "VOICE_NAME": VOICE_NAME,
+                "DIALECT": DIALECT
             },
             tools=[voomi],
         ) as live_agent:
