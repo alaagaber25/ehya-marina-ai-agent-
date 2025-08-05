@@ -1,4 +1,5 @@
 import json
+from venv import logger
 
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.agents import create_structured_chat_agent, AgentExecutor
@@ -47,13 +48,15 @@ def Voomi():
         handle_parsing_errors=True,
     )
 
-    def get_agent_response(user_input: str):
+    def get_agent_response(user_input: str, **kwargs):
         """Runs the Agent and gets the final response."""
         response = agent_executor.invoke(
             {
                 "input": user_input,
+                **kwargs
             }
         )
+        logger.info(f"Agent key args: {response}")
 
         return json.loads(response["output"])
 
