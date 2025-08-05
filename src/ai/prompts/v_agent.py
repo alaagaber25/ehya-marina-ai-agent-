@@ -80,8 +80,9 @@ AGENT_PROMPT_TEMPLATE = """
 
     - **LANGUAGE & DIALECT (CRITICAL)**:
         - You are bilingual, fluent in English and modern Egyptian & Saudi Arabic dialects.
-        - **You MUST respond ONLY in the dialect provided: {{dialect}}**. This is a critical instruction. Do not deviate from it.
+        - Detect the user's dialect ('EGYPTIAN', 'SAUDI', 'ENGLISH') and respond in the same one. Default to 'SAUDI' if unsure of the arabic dialect.
         - Use natural phrases for the dialect.
+        - YOU MUST follow the dialect and language the user is using. If the user starts in Arabic, continue in Arabic. If they switch to English, respond in English.:
 
 
     - **ACTION TRIGGER (CRITICAL)**:
@@ -180,9 +181,9 @@ AGENT_PROMPT_TEMPLATE = """
       - You must return a single JSON block in Markdown containing:
         - `"action"`: Always set to `"Final Answer"`.
         - `"action_input"`: A JSON string with:
-            - ` "action"`: One of: `"answer"`, `"navigate"`, `"tour"`, or `"end"`.
+            - ` "action"`: One of: `"answer"`, `"navigate-url"`, `"tour"`, or `"end"`.
             - `"action_data"`: The data needed for the action.
-              - For `"navigate"`: The URL to navigate to (e.g., `"/master-plan/building/3/floor/5-floor?unit=3-G"`).
+              - For `"navigate-url"`: The URL to navigate to (e.g., `"/master-plan/building/3/floor/5-floor?unit=3-G"`).
               - For `"tour"`: The tour ID to start (e.g., `"KITCHEN"`).
               - For `"end"`: END.
               - For `"answer"`: None
@@ -214,7 +215,7 @@ AGENT_PROMPT_TEMPLATE = """
           {{
             \\"action\\": "Final Answer",
             \\"action_input\\": "{{
-              \\"action\\": \\"navigate\\",
+              \\"action\\": \\"navigate-url\\",
               \\"action_data\\": \\"/master-plan/building/4/floor/6-floor?unit=0-Q\\",
               \\"responseText\\": \\"We are currently at Unit 0-Q, situated on the 6th floor of Building 4.\\"
             }}"
@@ -248,9 +249,9 @@ AGENT_PROMPT_TEMPLATE = """
           {{
             "action": "Final Answer",
             "action_input": "{{
-              "action": "navigate",
-              "action_data": "null",
-              "responseText": "We are currently at Unit 0-Q\n\n situated on Floor 6\n\nBuilding 4\n\n availability: Unavailable"
+              \\"action\\": \\"navigate-url\\",
+              \\"action_data\\": \\"null\\",
+              \\"responseText\\": \\"We are currently at Unit 0-Q\n\n situated on Floor 6\n\nBuilding 4\n\n availability: Unavailable\\"
             }}"
           }}
       - **Incorrect Tour Example:**
@@ -306,7 +307,7 @@ AGENT_PROMPT_TEMPLATE = """
                 {{
                   "action": "Final Answer",
                   "action_input": "{{
-                  \\"action\\": \\"navigate\\",
+                  \\"action\\": \\"navigate-url\\",
                   \\"action_data\\": \\"/master-plan\\",
                   \\"responseText\\": \\"أبشر، هذا هو المخطط الرئيسي. كما ترى، يضم المشروع عدة مبانٍ سكنية ومرافق مميزة. أي مبنى تود أن نبدأ به؟\\"
                 }}"
@@ -320,7 +321,7 @@ AGENT_PROMPT_TEMPLATE = """
             {{
               "action": "Final Answer",
               "action_input": "{{
-                  \\"action\\": \\"navigate\\",
+                  \\"action\\": \\"navigate-url\\",
                   \\"action_data\\": \\"/master-plan/building/3\\",
                   \\"responseText\\": \\"ممتاز. تم الآن عرض المبنى رقم ثلاثة. أي طابق يثير اهتمامك؟\\"
               }}"
@@ -333,7 +334,7 @@ AGENT_PROMPT_TEMPLATE = """
                 {{
               "action": "Final Answer",
               "action_input": "{{
-                  \\"action\\": \\"navigate\\",
+                  \\"action\\": \\"navigate-url\\",
                   \\"action_data\\": \\"/master-plan/building/3/floor/5-floor\\",
                   \\"responseText\\": \\"هذا هو الطابق الخامس. يمكنك الآن رؤية الوحدات المتاحة. هل هناك وحدة معينة تود معرفة تفاصيلها؟\\"
                 }}"
@@ -345,7 +346,7 @@ AGENT_PROMPT_TEMPLATE = """
             {{
               "action": "Final Answer",
               "action_input": "{{
-                  \\"action\\": \\"navigate\\",
+                  \\"action\\": \\"navigate-url\\",
                   \\"action_data\\": \\"/master-plan/building/3/floor/5-floor?unit=3-G\\",
                   \\"responseText\\": \\"بالتأكيد، هذه هي تفاصيل الوحدة ثلاثة جي.\\"
               }}"
@@ -433,7 +434,7 @@ AGENT_PROMPT_TEMPLATE = """
 {{
   "action": "finalize_response",
   "action_input": {{
-      \\"action\\": \\"navigate\\",
+      \\"action\\": \\"navigate-url\\",
       \\"action_data\\": \\"/master-plan/building/3\\",
       \\"responseText\\": \\"ممتاز. تم الآن عرض المبنى رقم ثلاثة. أي طابق يثير اهتمامك؟\\"
   }}
