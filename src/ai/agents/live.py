@@ -34,6 +34,7 @@ class LiveAgentConfig(TypedDict):
     VAD_END_SENSITIVITY: NotRequired[Literal["low"] | Literal["high"]]
     VAD_SILENCE_DURATION_MS: NotRequired[int]
     VAD_PREFIX_PADDING_MS: NotRequired[int]
+    DIALECT: NotRequired[str]
 
 
 class MessageType(StrEnum):
@@ -57,6 +58,7 @@ class AgentMessage:
 class LiveAgent:
     def __init__(self, config: LiveAgentConfig, tools: list[Callable[..., Any]]):
         self.__client = genai.Client(api_key=config.get("API_KEY"))
+        self.__dialect = config.get("DIALECT")
 
         # Build the live config with improved VAD settings
         audio_transcription_config = self.__get_transcroption_config(config)
@@ -223,7 +225,10 @@ class LiveAgent:
                     if fc.name in self.__functions_to_call:
                         if fc.args is None:
                             fc.args = {}
+                        if 'dialect' not in fc.args:
+                            fc.args['dialect'] = self.__dialect
                         try:
+                            fc.args['original_dialect'] = self.__dialect
                             logger.info(f"\n\nCalling tool: {fc.name} with args: {fc.args}\n\n")
                             response = self.__functions_to_call[fc.name](**fc.args)
                             function_response = FunctionResponse(

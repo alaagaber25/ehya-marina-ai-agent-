@@ -17,7 +17,7 @@ from ai.tools import (
 )
 
 
-def Voomi():
+def Voomi(dialect: str):
     # 1. Initialize LLM
     llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0.7)
 
@@ -48,14 +48,15 @@ def Voomi():
         handle_parsing_errors=True,
     )
 
-    def get_agent_response(user_input: str, **kwargs):
+    def get_agent_response(user_input: str, dialect: str, **kwargs):
         """Runs the Agent and gets the final response."""
-        response = agent_executor.invoke(
-            {
-                "input": user_input,
-                **kwargs
-            }
-        )
+
+        original_dialect = kwargs.get('original_dialect', None)
+        if original_dialect:
+            proper_dialect = original_dialect
+            logger.info(f"Using original WebSocket dialect: {proper_dialect}")
+        dialect_instruction = f"IMPORTANT: You must respond in {proper_dialect} dialect. User's message: {user_input}"
+        response = agent_executor.invoke({"input": dialect_instruction})
         logger.info(f"Agent key args: {response}")
 
         return json.loads(response["output"])

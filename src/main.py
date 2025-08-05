@@ -46,10 +46,10 @@ async def websocket_endpoint(ws: WebSocket, db: AsyncSession = Depends(get_db)):
     DIALECT = parsed_data.get("data", {}).get("dialect")
     PERSONA = parsed_data.get("data", {}).get("persona")
     logger.info(f"WebSocket connected with dialect: {DIALECT}, persona: {PERSONA}")
-    VOICE_NAME = "Leda" if PERSONA == "female" else "Charon"
+    VOICE_NAME = "Aoede" if PERSONA == "female" else "Fenrir"
     # Create a new chat session
     chat = await DatabaseService.create_chat(db, "Live Chat Session")
-    voomi = Voomi()
+    voomi = Voomi(dialect=DIALECT)
     message_accumulator = MessageAccumulator()
 
     logger.info(f"Created chat session: {chat.id}")
