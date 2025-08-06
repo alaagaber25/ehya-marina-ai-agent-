@@ -8,6 +8,7 @@ from fastapi import Depends, FastAPI, WebSocket
 from fastapi.websockets import WebSocketDisconnect, WebSocketState
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
+import asyncio
 import json
 import config as config
 from ai.agents.live import LiveAgent, MessageType
@@ -107,14 +108,15 @@ async def websocket_endpoint(ws: WebSocket, db: AsyncSession = Depends(get_db)):
             "tool_call_response", data, MessageType.TOOL_CALL_RESPONSE
         ),
     }
-
+    # system_prompt = get_system_prompt(DIALECT)
+    # logger.info(f"UsingUsing system prompt: {system_prompt}")
     try:
         async with LiveAgent(
             config={
                 "API_KEY": config.GOOGLE_API_KEY,
                 "ENABLE_TRANSCRIPTION": True,
-                "MODEL": "gemini-2.0-flash-live-001",
-                "SYSTEM_PROMPT": live.SYSTEM_PROMPT,
+                "MODEL": "gemini-live-2.5-flash-preview",
+                "SYSTEM_PROMPT": live.get_system_prompt(DIALECT),
                 "VOICE_NAME": VOICE_NAME,
                 "DIALECT": DIALECT
             },
@@ -189,31 +191,66 @@ async def websocket_endpoint(ws: WebSocket, db: AsyncSession = Depends(get_db)):
                         WebSocketState.CONNECTED,
                         WebSocketState.CONNECTING,
                     ]:
-                        async for message in live_agent.receive_message():
-                            if handler := handle_message_type.get(message.type):
-                                await handler(message.data)
+                        try:
+                            # إضافة timeout للـ receive_message
+                            async for message in live_agent.receive_message():
+                                if handler := handle_message_type.get(message.type):
+                                    try:
+                                        await asyncio.wait_for(handler(message.data), timeout=30.0)
+                                        
+                                        # Reset timeout for message completion detection
+                                        if message_timeout:
+                                            message_timeout.cancel()
 
-                                # Reset timeout for message completion detection
-                                if message_timeout:
-                                    message_timeout.cancel()
+                                        # Set timeout to detect when agent stops sending messages
+                                        async def timeout_handler():
+                                            try:
+                                                await asyncio.sleep(2.0)
+                                                await handle_message_completion()
+                                            except Exception as e:
+                                                logger.error(f"Timeout handler error: {e}")
 
-                                # Set timeout to detect when agent stops sending messages
-                                async def timeout_handler():
-                                    await asyncio.sleep(
-                                        2.0
-                                    )  # Wait 2 seconds after last message
-                                    await handle_message_completion()
-
-                                message_timeout = asyncio.create_task(timeout_handler())
+                                        message_timeout = asyncio.create_task(timeout_handler())
+                                        
+                                    except asyncio.TimeoutError:
+                                        logger.warning("Message handler timeout - skipping")
+                                        continue
+                                    except Exception as e:
+                                        logger.error(f"Handler error: {e}")
+                                        continue
+                                        
+                        except asyncio.TimeoutError:
+                            logger.warning("Live agent receive timeout")
+                            # إرسال ping للتأكد من الاتصال
+                            try:
+                                await ws.send_json({"type": "ping"})
+                            except:
+                                logger.error("Failed to send ping - connection lost")
+                                break
+                                
+                        except Exception as e:
+                            logger.error(f"Receive message error: {e}")
+                            # محاولة استكمال العمل
+                            await asyncio.sleep(1)
+                            continue
 
                 except WebSocketDisconnect:
                     logger.info("WebSocket disconnected in send_thread")
                 except Exception as e:
                     logger.error(f"Error in send_thread: {e}")
+                    # محاولة إغلاق الاتصال بشكل صحيح
+                    try:
+                        if ws.client_state == WebSocketState.CONNECTED:
+                            await ws.close(code=1000, reason="Internal error")
+                    except:
+                        pass
                 finally:
                     # Save any remaining accumulated message
-                    if message_accumulator.is_collecting:
-                        await handle_message_completion()
+                    try:
+                        if message_accumulator.is_collecting:
+                            await handle_message_completion()
+                    except Exception as e:
+                        logger.error(f"Final cleanup error: {e}")
 
             # Run both threads concurrently
             await asyncio.gather(

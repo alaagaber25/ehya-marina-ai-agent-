@@ -1,6 +1,6 @@
 import datetime
 import logging
-
+import asyncio
 from ai.agents.live import MessageType
 from db.service import DatabaseService, MessageDirection
 
@@ -42,57 +42,67 @@ class MessageAccumulator:
             self.transcription_pieces.append(str(data))
 
     async def save_accumulated_message(self, db, chat_id):
-        """Save the complete accumulated message to database"""
+        """Save the complete accumulated message to database with retry logic"""
         if not self.is_collecting:
             return
 
-        try:
-            # Save accumulated text if any
-            if self.text_pieces:
-                complete_text = "".join(self.text_pieces)
-                await DatabaseService.save_message(
-                    db=db,
-                    chat_id=chat_id,
-                    direction=MessageDirection.OUTGOING,
-                    content_type=MessageType.TEXT,
-                    text_content=complete_text,
-                )
-                logger.info(f"Saved complete text message: {len(complete_text)} chars")
+        max_retries = 3
+        retry_count = 0
+        
+        while retry_count < max_retries:
+            try:
+                # Save accumulated text if any
+                if self.text_pieces:
+                    complete_text = "".join(self.text_pieces)
+                    await asyncio.wait_for(
+                        DatabaseService.save_message(
+                            db=db,
+                            chat_id=chat_id,
+                            direction=MessageDirection.OUTGOING,
+                            content_type=MessageType.TEXT,
+                            text_content=complete_text,
+                        ),
+                        timeout=10.0
+                    )
+                    logger.info(f"Saved complete text message: {len(complete_text)} chars")
 
-            # Save accumulated audio if any
-            if self.audio_pieces:
-                # Concatenate audio pieces (all should be bytes)
-                complete_audio = b"".join(self.audio_pieces)
-                await DatabaseService.save_message(
-                    db=db,
-                    chat_id=chat_id,
-                    direction=MessageDirection.OUTGOING,
-                    content_type=MessageType.AUDIO,
-                    audio_content=complete_audio,
-                    audio_format="wav",
-                )
-                logger.info(
-                    f"Saved complete audio message: {len(complete_audio)} bytes"
-                )
-
-            # Save accumulated transcription if any
-            if self.transcription_pieces:
-                complete_transcription = "".join(self.transcription_pieces)
-                await DatabaseService.save_message(
-                    db=db,
-                    chat_id=chat_id,
-                    direction=MessageDirection.OUTGOING,
-                    content_type=MessageType.OUTPUT_TRANSCRIPTION,
-                    text_content=complete_transcription,
-                )
-                logger.info(
-                    f"Saved complete transcription: {len(complete_transcription)} chars"
-                )
-
-        except Exception as e:
-            logger.error(f"Failed to save accumulated message: {e}")
-        finally:
-            self.reset()
+                # Save accumulated transcription if any
+                if self.transcription_pieces:
+                    complete_transcription = "".join(self.transcription_pieces)
+                    await asyncio.wait_for(
+                        DatabaseService.save_message(
+                            db=db,
+                            chat_id=chat_id,
+                            direction=MessageDirection.OUTGOING,
+                            content_type=MessageType.OUTPUT_TRANSCRIPTION,
+                            text_content=complete_transcription,
+                        ),
+                        timeout=10.0
+                    )
+                    logger.info(f"Saved complete transcription: {len(complete_transcription)} chars")
+                
+                # break if all pieces are saved successfully
+                break
+                
+            except asyncio.TimeoutError:
+                retry_count += 1
+                logger.warning(f"Database save timeout, retry {retry_count}/{max_retries}")
+                if retry_count >= max_retries:
+                    logger.error("Failed to save message after all retries")
+                    break
+                await asyncio.sleep(1) # wait before retrying
+                
+            except Exception as e:
+                retry_count += 1
+                logger.error(f"Failed to save accumulated message (attempt {retry_count}): {e}")
+                if retry_count >= max_retries:
+                    logger.error("Failed to save message after all retries")
+                    break
+                await asyncio.sleep(1)
+                
+            finally:
+                if retry_count >= max_retries or retry_count == 0:
+                    self.reset()
 
     def reset(self):
         self.is_collecting = False
