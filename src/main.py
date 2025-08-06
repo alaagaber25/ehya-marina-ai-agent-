@@ -37,7 +37,7 @@ class ClientData(BaseModel):
     audio: str | None = None
     audio_stream_end: bool = Field(default=False)
 
-
+    
 @app.websocket("/ws")
 async def websocket_endpoint(ws: WebSocket, db: AsyncSession = Depends(get_db)):
     await ws.accept()
@@ -47,7 +47,7 @@ async def websocket_endpoint(ws: WebSocket, db: AsyncSession = Depends(get_db)):
     DIALECT = parsed_data.get("data", {}).get("dialect")
     PERSONA = parsed_data.get("data", {}).get("persona")
     logger.info(f"WebSocket connected with dialect: {DIALECT}, persona: {PERSONA}")
-    VOICE_NAME = "Aoede" if PERSONA == "female" else "Fenrir"
+    VOICE_NAME = "Zephyr" if PERSONA == "female" else "Orus"
     # Create a new chat session
     chat = await DatabaseService.create_chat(db, "Live Chat Session")
     voomi = Voomi(dialect=DIALECT)
@@ -110,15 +110,17 @@ async def websocket_endpoint(ws: WebSocket, db: AsyncSession = Depends(get_db)):
     }
     # system_prompt = get_system_prompt(DIALECT)
     # logger.info(f"UsingUsing system prompt: {system_prompt}")
+    language_map = {"EGYPTIAN": "ar-EG", "SAUDI": "ar-SA", "ENGLISH": "en-US"}
+    code= language_map.get(DIALECT)
     try:
         async with LiveAgent(
             config={
                 "API_KEY": config.GOOGLE_API_KEY,
                 "ENABLE_TRANSCRIPTION": True,
-                "MODEL": "gemini-live-2.5-flash-preview",
-                "SYSTEM_PROMPT": live.get_system_prompt(DIALECT),
+                "MODEL": config.LIVEAPI_MODEL,
+                "SYSTEM_PROMPT": live.get_system_prompt(dialect=DIALECT, language_code=code),
                 "VOICE_NAME": VOICE_NAME,
-                "DIALECT": DIALECT
+                "DIALECT": DIALECT,
             },
             tools=[voomi],
         ) as live_agent:
@@ -192,7 +194,7 @@ async def websocket_endpoint(ws: WebSocket, db: AsyncSession = Depends(get_db)):
                         WebSocketState.CONNECTING,
                     ]:
                         try:
-                            # إضافة timeout للـ receive_message
+                            # Add timeout for receive_message
                             async for message in live_agent.receive_message():
                                 if handler := handle_message_type.get(message.type):
                                     try:
@@ -221,7 +223,7 @@ async def websocket_endpoint(ws: WebSocket, db: AsyncSession = Depends(get_db)):
                                         
                         except asyncio.TimeoutError:
                             logger.warning("Live agent receive timeout")
-                            # إرسال ping للتأكد من الاتصال
+                            # Send ping to check connection
                             try:
                                 await ws.send_json({"type": "ping"})
                             except:
@@ -229,8 +231,8 @@ async def websocket_endpoint(ws: WebSocket, db: AsyncSession = Depends(get_db)):
                                 break
                                 
                         except Exception as e:
-                            logger.error(f"Receive message error: {e}")
-                            # محاولة استكمال العمل
+                            # logger.error(f"Receive message error: {e}")
+                            # Attempt to continue operation
                             await asyncio.sleep(1)
                             continue
 
@@ -238,7 +240,7 @@ async def websocket_endpoint(ws: WebSocket, db: AsyncSession = Depends(get_db)):
                     logger.info("WebSocket disconnected in send_thread")
                 except Exception as e:
                     logger.error(f"Error in send_thread: {e}")
-                    # محاولة إغلاق الاتصال بشكل صحيح
+                    # Attempt to close connection properly
                     try:
                         if ws.client_state == WebSocketState.CONNECTED:
                             await ws.close(code=1000, reason="Internal error")

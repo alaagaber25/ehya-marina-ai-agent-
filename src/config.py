@@ -14,6 +14,11 @@ GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", "")
 if not GOOGLE_API_KEY:
     raise ValueError("ERROR: GOOGLE_API_KEY not found in .env file")
 
+LIVEAPI_MODEL= os.getenv("LIVEAPI_MODEL")
+if not LIVEAPI_MODEL:
+    raise ValueError("ERROR: LIVEAPI_MODEL not found in .env file")
+
+
 # # Google Cloud Project and Location
 # GOOGLE_CLOUD_PROJECT = os.getenv('GOOGLE_CLOUD_PROJECT', 'voom-n8n-automation')
 # GOOGLE_CLOUD_LOCATION = os.getenv('GOOGLE_CLOUD_REGION', 'us-central1')

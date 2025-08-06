@@ -46,9 +46,10 @@ def Voomi(dialect: str):
         verbose=True,
         memory=memory,
         handle_parsing_errors=True,
+        max_iterations=5,
     )
 
-    def get_agent_response(user_input: str, dialect: str, **kwargs):
+    def get_agent_response(user_input: str, dialect: str, **kwargs): 
         """Runs the Agent and gets the final response."""
 
         original_dialect = kwargs.get('original_dialect', None)

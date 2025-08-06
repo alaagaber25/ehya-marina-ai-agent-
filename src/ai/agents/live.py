@@ -77,7 +77,7 @@ class LiveAgent:
                         # You can specify a voice name here if needed
                         voice_name=voice_name
                     )
-                )
+                ),
             ),
             tools=tools,
             system_instruction=Content(
