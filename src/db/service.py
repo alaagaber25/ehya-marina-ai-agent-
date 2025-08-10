@@ -5,7 +5,7 @@ from enum import Enum
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
-from ai.agents.live import MessageType
+from agents.live_agent import MessageType
 
 from .chat import Chat, Message
 

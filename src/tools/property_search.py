@@ -1,13 +1,11 @@
 import logging
 import random
-import cloudscraper
-import csv 
-from langchain.tools import tool
-from typing import Optional, List, Dict, Any
-import json
-
 import time
-from requests.exceptions import RequestException, ConnectionError, Timeout
+from typing import Any, Dict, List, Optional
+
+import cloudscraper
+from langchain.tools import tool
+from requests.exceptions import ConnectionError, RequestException, Timeout
 
 logging.basicConfig(level=logging.INFO)
 
@@ -15,11 +13,17 @@ logging.basicConfig(level=logging.INFO)
 # We will ONLY use the last_search_results. The global unit_cache is removed to prevent data overwriting bugs.
 last_search_results: List[Dict[str, Any]] = []
 
+# Initialize the scraper once to be reused
+scraper = cloudscraper.create_scraper(
+    browser={"custom": "ScraperBot/1.0"}
+)
+
 def clear_unit_cache():
     """Clears the last search results cache for a new session."""
     global last_search_results
     last_search_results = []
     logging.info("Tool Cache: Last search results cache has been cleared.")
+
 
 @tool
 def get_project_units(
@@ -108,6 +112,7 @@ def get_project_units(
 
     return [{"error": "Unhandled error occurred while fetching project units."}]
 
+
 @tool
 def search_units_in_memory(
     unit_code: Optional[str] = None,
@@ -186,63 +191,3 @@ def search_units_in_memory(
 
     logging.info(f"Tool: Returning {len(results_to_filter)} units after filtering memory.")
     return results_to_filter
-
-
-last_search_results: List[Dict[str, Any]] = []
-scraper = cloudscraper.create_scraper(
-    browser={"custom": "ScraperBot/1.0"}
-)
-
-@tool
-def save_lead(name: str, phone: str, unit_code: str, notes: str) -> str:
-    """
-    Saves the information of an interested user (lead) for follow-up by a sales agent.
-
-    - The user expresses **strong interest** in a specific unit and agrees to be contacted.
-    - The **unit is not available**, and the user wants to be contacted when it becomes available.
-    - The user explicitly requests to be **connected with customer service or support**.
-
-    Parameters:
-    - name (str): The user's full name.
-    - phone (str): The user's phone number.
-    - unit_code (str): The code of the unit the user is interested in.
-    - notes (str): *Auto-generated summary** of the user’s intent and relevant chat history. 
-
-    Returns:
-    - A success or error message based on whether the lead was saved successfully.
-    """
-
-    logging.info(f"Tool: Saving lead - Name: {name}, Phone: {phone}, Unit: {unit_code}")
-    try:
-        # Define the header for the CSV file
-        header = ['name', 'phone', 'unit_code', 'notes', 'timestamp']
-        
-        # Prepare the data row
-        from datetime import datetime
-        lead_data = {
-            'name': name,
-            'phone': phone,
-            'unit_code': unit_code,
-            'notes': notes,
-            'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        }
-        
-        # Check if file exists to write header only once
-        import os
-        file_exists = os.path.isfile(r'src/ai/tools/data/leads.csv')
-
-        with open(r'src/ai/tools/data/leads.csv', 'a', newline='', encoding='utf-8-sig') as f:
-            writer = csv.DictWriter(f, fieldnames=header)
-            if not file_exists:
-                writer.writeheader()  # Write header if file is new
-            writer.writerow(lead_data)
-            
-        success_message = f"Successfully saved lead for {name}. A consultant will contact them shortly about unit {unit_code}."
-        logging.info(success_message)
-        return success_message
-    except Exception as e:
-        error_message = f"An error occurred while saving the lead: {e}"
-        logging.error(error_message)
-        return error_message
-
-

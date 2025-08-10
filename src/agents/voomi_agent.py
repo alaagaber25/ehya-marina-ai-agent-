@@ -6,15 +6,8 @@ from langchain.agents import create_structured_chat_agent, AgentExecutor
 from langchain.memory import ConversationBufferMemory
 
 import config as config
-from ai.prompts.v_agent import custom_agent_prompt
-from ai.tools import (
-    get_project_units,
-    search_units_in_memory,
-    # navigate_to_page,
-    # click_element,
-    save_lead,
-    # clear_unit_cache, # this is bad!
-)
+from prompts.voomi_prompt import custom_agent_prompt
+from tools import (get_project_units, save_lead, search_units_in_memory)
 
 
 def Voomi(dialect: str):
@@ -25,8 +18,6 @@ def Voomi(dialect: str):
     tools = [
         get_project_units,
         search_units_in_memory,
-        # navigate_to_page,
-        # click_element,
         save_lead,
     ]
 

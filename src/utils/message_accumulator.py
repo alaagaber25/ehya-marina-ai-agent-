@@ -1,7 +1,7 @@
 import datetime
 import logging
 import asyncio
-from ai.agents.live import MessageType
+from agents.live_agent import MessageType
 from db.service import DatabaseService, MessageDirection
 
 logger = logging.getLogger(__name__)

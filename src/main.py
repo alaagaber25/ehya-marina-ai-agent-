@@ -11,9 +11,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 import asyncio
 import json
 import config as config
-from ai.agents.live import LiveAgent, MessageType
-from ai.agents.voomi import Voomi
-from ai.prompts import live
+from agents.live_agent import LiveAgent, MessageType
+from agents.voomi_agent import Voomi
+from prompts import live_prompt
 from db import DatabaseService, MessageDirection, create_tables, get_db
 from utils.audio_codec import AudioCodec
 from utils.message_accumulator import MessageAccumulator
@@ -118,7 +118,7 @@ async def websocket_endpoint(ws: WebSocket, db: AsyncSession = Depends(get_db)):
                 "API_KEY": config.GOOGLE_API_KEY,
                 "ENABLE_TRANSCRIPTION": True,
                 "MODEL": config.LIVEAPI_MODEL,
-                "SYSTEM_PROMPT": live.get_system_prompt(dialect=DIALECT, language_code=code),
+                "SYSTEM_PROMPT": live_prompt.get_system_prompt(dialect=DIALECT, language_code=code),
                 "VOICE_NAME": VOICE_NAME,
                 "DIALECT": DIALECT,
             },
