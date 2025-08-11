@@ -10,7 +10,7 @@ from prompts.voomi_prompt import custom_agent_prompt
 from tools import (get_project_units, save_lead, search_units_in_memory)
 
 
-def Voomi(dialect: str):
+def Voomi(dialect: str, gender: str):
     # 1. Initialize LLM
     llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0.7)
 
@@ -40,16 +40,23 @@ def Voomi(dialect: str):
         max_iterations=5,
     )
 
-    def get_agent_response(user_input: str, dialect: str, **kwargs): 
+    def get_agent_response(user_input: str, gender: str, **kwargs):
         """Runs the Agent and gets the final response."""
 
         original_dialect = kwargs.get('original_dialect', None)
         if original_dialect:
             proper_dialect = original_dialect
             logger.info(f"Using original WebSocket dialect: {proper_dialect}")
-        dialect_instruction = f"IMPORTANT: You must respond in {proper_dialect} dialect. User's message: {user_input}"
+
+        # dialect_instruction = f"Style: {proper_dialect} dialect, {gender} voice persona (model's persona, not user), friendly and engaging tone, normal speed, use more vocabulary and expressions from {proper_dialect}. Text: {user_input}"
+        dialect_instruction = "".join([
+        f"Generate the response in the {proper_dialect} Arabic dialect with a {gender} persona, this is your persona, not user. ",
+        f"Use only colloquial {proper_dialect} vocabulary and expressions, avoiding Modern Standard Arabic, for a natural tone. ",
+        f"Keep the tone warm, friendly, and culturally sensitive, aligned with the {gender} persona. ",
+        f"The input text is: {user_input}"
+    ])
         response = agent_executor.invoke({"input": dialect_instruction})
-        logger.info(f"Agent key args: {response}")
+        # logger.info(f"Agent key args: {response}")
 
         return json.loads(response["output"])
 

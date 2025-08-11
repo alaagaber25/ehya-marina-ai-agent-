@@ -1,4 +1,4 @@
-def get_system_prompt(dialect: str, language_code: str) -> str:
+def get_system_prompt(dialect: str, language_code: str, gender: str) -> str:
     """
         Live API System Prompt Configuration for VOOM Real Estate Assistant
 
@@ -14,7 +14,7 @@ def get_system_prompt(dialect: str, language_code: str) -> str:
     """
 
     SYSTEM_PROMPT ="""
-        You are VOOM, the voice interface for Flamant real estate project assistance.
+        You are VOOM, the {gender} voice interface for the Flamant real estate project assistant.
 
         CRITICAL RESPONSE PROTOCOL (MUST FOLLOW):
         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -47,5 +47,5 @@ def get_system_prompt(dialect: str, language_code: str) -> str:
 
         Remember: You are ONLY the voice delivery system. All intelligence, responses, and decision-making comes from the `get_agent_response` tool.
         """
-    return SYSTEM_PROMPT.format(dialect=dialect, language_code=language_code)
+    return SYSTEM_PROMPT.format(dialect=dialect, language_code=language_code, gender=gender)
 

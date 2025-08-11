@@ -21,5 +21,11 @@ LIVEAPI_MODEL= os.getenv("LIVEAPI_MODEL")
 if not LIVEAPI_MODEL:
     raise ValueError("ERROR: LIVEAPI_MODEL not found in .env file")
 
+# --- Voice Names ---
+MALE_VOICE_NAME = os.getenv("MALE_VOICE_NAME", "")
+if not MALE_VOICE_NAME:
+    raise ValueError("ERROR: MALE_VOICE_NAME not found in .env file")
 
-
+FEMALE_VOICE_NAME = os.getenv("FEMALE_VOICE_NAME", "")
+if not FEMALE_VOICE_NAME:
+    raise ValueError("ERROR: FEMALE_VOICE_NAME not found in .env file")

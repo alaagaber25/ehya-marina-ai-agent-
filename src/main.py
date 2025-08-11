@@ -40,17 +40,23 @@ class ClientData(BaseModel):
     
 @app.websocket("/ws")
 async def websocket_endpoint(ws: WebSocket, db: AsyncSession = Depends(get_db)):
+    
     await ws.accept()
     voice_config_raw= await ws.receive()
+    
     text_data = voice_config_raw.get("text")
     parsed_data = json.loads(text_data)
+
     DIALECT = parsed_data.get("data", {}).get("dialect")
     PERSONA = parsed_data.get("data", {}).get("persona")
-    logger.info(f"WebSocket connected with dialect: {DIALECT}, persona: {PERSONA}")
-    VOICE_NAME = "Zephyr" if PERSONA == "female" else "Orus"
+
+    VOICE_NAME = config.FEMALE_VOICE_NAME if PERSONA == "female" else config.MALE_VOICE_NAME
+
+    logger.info(f"WebSocket connected with dialect: {DIALECT}, persona: {PERSONA} and voice: {VOICE_NAME}")
+
     # Create a new chat session
     chat = await DatabaseService.create_chat(db, "Live Chat Session")
-    voomi = Voomi(dialect=DIALECT)
+    voomi = Voomi(dialect=DIALECT, gender=PERSONA)
     message_accumulator = MessageAccumulator()
 
     logger.info(f"Created chat session: {chat.id}")
@@ -108,8 +114,7 @@ async def websocket_endpoint(ws: WebSocket, db: AsyncSession = Depends(get_db)):
             "tool_call_response", data, MessageType.TOOL_CALL_RESPONSE
         ),
     }
-    # system_prompt = get_system_prompt(DIALECT)
-    # logger.info(f"UsingUsing system prompt: {system_prompt}")
+
     language_map = {"EGYPTIAN": "ar-EG", "SAUDI": "ar-SA", "ENGLISH": "en-US"}
     code= language_map.get(DIALECT)
     try:
@@ -118,7 +123,7 @@ async def websocket_endpoint(ws: WebSocket, db: AsyncSession = Depends(get_db)):
                 "API_KEY": config.GOOGLE_API_KEY,
                 "ENABLE_TRANSCRIPTION": True,
                 "MODEL": config.LIVEAPI_MODEL,
-                "SYSTEM_PROMPT": live_prompt.get_system_prompt(dialect=DIALECT, language_code=code),
+                "SYSTEM_PROMPT": live_prompt.get_system_prompt(dialect=DIALECT, language_code=code, gender=PERSONA),
                 "VOICE_NAME": VOICE_NAME,
                 "DIALECT": DIALECT,
             },
