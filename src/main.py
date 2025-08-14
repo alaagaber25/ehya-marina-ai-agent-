@@ -54,14 +54,21 @@ async def websocket_endpoint(ws: WebSocket):
         parsed_data = json.loads(text_data)
 
         dialect = parsed_data.get("data", {}).get("dialect")
-        persona = parsed_data.get("data", {}).get("persona")
-        voice_name = config.FEMALE_VOICE_NAME if persona == "female" else config.MALE_VOICE_NAME
+        agent_gender = parsed_data.get("data", {}).get("persona")
+        agent_name = parsed_data.get("data", {}).get("name")
 
-        logger.info(f"WebSocket connected - Dialect: {dialect}, Persona: {persona}, Voice: {voice_name}")
+        voice_name = config.FEMALE_VOICE_NAME if agent_gender == "female" else config.MALE_VOICE_NAME
+
+        # Map dialect to language code
+        language_map = {"EGYPTIAN": "ar-EG", "SAUDI": "ar-SA", "ENGLISH": "en-US", "FRENCH": "fr-FR", "SPANISH": "es-ES"}
+        languages_skills = ["English", "Egyptian Arabic", "Saudi Arabic"]
+        language_code = language_map.get(dialect)
+
+        logger.info(f"WebSocket connected - Dialect: {dialect}, Agent Name: {agent_name}, Agent Gender: {agent_gender}, Voice: {voice_name}")
 
         # Initialize agent and session
         session_id = f"session_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-        voomi = Voomi(dialect=dialect, gender=persona)
+        voomi = Voomi(project_id="flamant", agent_name=agent_name, agent_gender=agent_gender, dialect=dialect,languages_skills=languages_skills)
 
         logger.info(f"Created session: {session_id}")
 
@@ -94,10 +101,6 @@ async def websocket_endpoint(ws: WebSocket):
             MessageType.TOOL_CALL_RESPONSE: lambda data: send_json_streaming("tool_call_response", data),
         }
 
-        # Map dialect to language code
-        language_map = {"EGYPTIAN": "ar-EG", "SAUDI": "ar-SA", "ENGLISH": "en-US", "FRENCH": "fr-FR", "SPANISH": "es-ES"}
-        language_code = language_map.get(dialect)
-        
         # Initialize Live Agent
         async with LiveAgent(
             config={
@@ -107,7 +110,7 @@ async def websocket_endpoint(ws: WebSocket):
                 "SYSTEM_PROMPT": live_prompt.get_system_prompt(
                     dialect=dialect, 
                     language_code=language_code, 
-                    gender=persona
+                    gender=agent_gender
                 ),
                 "VOICE_NAME": voice_name,
                 "DIALECT": dialect,

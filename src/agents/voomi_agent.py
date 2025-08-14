@@ -10,7 +10,7 @@ from prompts.voomi_prompt import custom_agent_prompt
 from tools import (get_project_units, save_lead, search_units_in_memory)
 
 
-def Voomi(dialect: str, gender: str):
+def Voomi(project_id: str, agent_name: str, agent_gender: str, dialect: str, languages_skills: list[str] = None):
     # 1. Initialize LLM
     llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0.7)
 
@@ -22,7 +22,7 @@ def Voomi(dialect: str, gender: str):
     ]
 
     # 3. Use your custom prompt
-    prompt = custom_agent_prompt
+    prompt = custom_agent_prompt(project_id=project_id, agent_name=agent_name, agent_gender=agent_gender,dialect=dialect, languages_skills=languages_skills)
 
     # 4. Create memory
     memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
