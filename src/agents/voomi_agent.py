@@ -7,7 +7,7 @@ from langchain.memory import ConversationBufferMemory
 
 import config as config
 from prompts.voomi_prompt import custom_agent_prompt
-from tools import (get_project_units, save_lead, search_units_in_memory)
+from tools import (get_project_units, save_lead)
 
 
 def Voomi(project_id: str, agent_name: str, agent_gender: str, dialect: str, languages_skills: list[str] = None):
@@ -17,7 +17,6 @@ def Voomi(project_id: str, agent_name: str, agent_gender: str, dialect: str, lan
     # 2. Gather the tools (now with the upgraded get_project_units)
     tools = [
         get_project_units,
-        search_units_in_memory,
         save_lead,
     ]
 
@@ -62,9 +61,3 @@ def Voomi(project_id: str, agent_name: str, agent_gender: str, dialect: str, lan
 
     return get_agent_response
 
-
-# def start_new_session():
-#     """Clears memory and tool caches for a new user session."""
-#     clear_unit_cache()
-#     memory.clear()
-#     print("--- New session started. Cache and memory cleared. ---")

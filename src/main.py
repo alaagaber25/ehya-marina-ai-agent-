@@ -14,6 +14,7 @@ from agents.live_agent import LiveAgent, MessageType
 from agents.voomi_agent import Voomi
 from prompts import live_prompt
 from utils.audio_codec import AudioCodec
+from tools import units_fetcher
 
 # Configure logging
 logging.getLogger('google_genai.types').setLevel(logging.ERROR)
@@ -214,4 +215,11 @@ async def websocket_endpoint(ws: WebSocket):
 
 if __name__ == "__main__":
     import uvicorn
+    units = units_fetcher.fetch_units_from_api("flamant")
+    if units:
+        logger.info(f"Fetched {len(units)} units from API.")
+    else:
+        logger.warning("No units found.")
+
+    logger.info("Starting FastAPI server...")
     uvicorn.run(app, host="0.0.0.0", port=8000)
