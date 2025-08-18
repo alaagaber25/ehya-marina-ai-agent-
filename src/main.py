@@ -213,6 +213,12 @@ async def websocket_endpoint(ws: WebSocket):
             logger.error(f"Error closing WebSocket: {e}")
 
 
+@app.get("/invlidate-cache")
+def invalidate_cache():
+    units_fetcher.fetch_units_from_api.cache_clear()
+    return True
+
+
 if __name__ == "__main__":
     import uvicorn
     units = units_fetcher.fetch_units_from_api("flamant")
