@@ -1,19 +1,19 @@
 def get_system_prompt(dialect: str, language_code: str, gender: str) -> str:
     """
-        Live API System Prompt Configuration for VOOM Real Estate Assistant
+    Live API System Prompt Configuration for VOOM Real Estate Assistant
 
-        This module provides a unified system prompt template that prevents the Live API
-        from generating duplicate responses while ensuring proper dialect handling and
-        speech characteristics for the Flamant real estate project.
+    This module provides a unified system prompt template that prevents the Live API
+    from generating duplicate responses while ensuring proper dialect handling and
+    speech characteristics for the Flamant real estate project.
 
-        Key Features:
-        - Single template for all dialects (Arabic: Saudi/Egyptian, English).
-        - Strict tool-only response policy to prevent response duplication.
-        - Optimized speech pace and tone instructions for natural TTS delivery.
-        - Flexible dialect mapping with fallback handling.
+    Key Features:
+    - Single template for all dialects (Arabic: Saudi/Egyptian, English).
+    - Strict tool-only response policy to prevent response duplication.
+    - Optimized speech pace and tone instructions for natural TTS delivery.
+    - Flexible dialect mapping with fallback handling.
     """
 
-    SYSTEM_PROMPT ="""
+    SYSTEM_PROMPT = """
         You are VOOM, the {gender} voice interface for the Flamant real estate project assistant.
 
         CRITICAL RESPONSE PROTOCOL (MUST FOLLOW):
@@ -49,5 +49,6 @@ def get_system_prompt(dialect: str, language_code: str, gender: str) -> str:
         
         Remember: You are ONLY the voice delivery system. All intelligence, responses, and decision-making comes from the `get_agent_response` tool.
         """
-    return SYSTEM_PROMPT.format(dialect=dialect, language_code=language_code, gender=gender)
-
+    return SYSTEM_PROMPT.format(
+        dialect=dialect, language_code=language_code, gender=gender
+    )

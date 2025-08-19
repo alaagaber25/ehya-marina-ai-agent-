@@ -12,13 +12,13 @@ from google.genai.types import (
     EndSensitivity,
     FunctionResponse,
     LiveConnectConfig,
-    SpeechConfig,  
-    VoiceConfig,    
-    PrebuiltVoiceConfig,  
     Modality,
     Part,
+    PrebuiltVoiceConfig,
     RealtimeInputConfigOrDict,
+    SpeechConfig,
     StartSensitivity,
+    VoiceConfig,
 )
 
 logger = logging.getLogger(__name__)
@@ -65,9 +65,7 @@ class LiveAgent:
         realtime_input_config = self.__get_realtime_input_config(config)
         voice_name = config.get("VOICE_NAME")
         if not voice_name:
-            logger.warning(
-                "VOICE_NAME not specified in config, using default voice."
-            )
+            logger.warning("VOICE_NAME not specified in config, using default voice.")
         self.__live_config = LiveConnectConfig(
             response_modalities=[Modality.AUDIO],
             speech_config=SpeechConfig(
@@ -225,21 +223,25 @@ class LiveAgent:
                     if fc.name in self.__functions_to_call:
                         if fc.args is None:
                             fc.args = {}
-                        if 'dialect' not in fc.args:
-                            fc.args['dialect'] = self.__dialect
+                        if "dialect" not in fc.args:
+                            fc.args["dialect"] = self.__dialect
                         try:
-                            fc.args['original_dialect'] = self.__dialect
-                            logger.info(f"\n\nCalling tool: {fc.name} with args: {fc.args}\n\n")
+                            fc.args["original_dialect"] = self.__dialect
+                            logger.info(
+                                f"\n\nCalling tool: {fc.name} with args: {fc.args}\n\n"
+                            )
                             response = self.__functions_to_call[fc.name](**fc.args)
-                            
+
                             # # Format the LangChain response before sending it to LiveAPI
-                            response['responseText'] = "".join([
-                                # f"Style: {fc.args['original_dialect']} dialect, {fc.args['gender']} voice persona (model's persona, not user), friendly and engaging tone, normal speed."
-                                # f"Style: Narrate in an authentic {fc.args['original_dialect']} Arabic dialect, using a {fc.args['gender']} voice persona (representing the model's persona, not the user). Adopt a warm, friendly, and engaging tone with a natural, conversational flow. Maintain a standard speaking speed suitable for clear comprehension. Incorporate a rich vocabulary and common colloquial expressions specific to the {fc.args['original_dialect']} dialect to enhance cultural authenticity. "
-                                f"Style: Narrate in an authentic {fc.args['original_dialect']} Arabic dialect, using a {fc.args['gender']} voice persona (your persona, not user). ",
-                                f"Adopt a warm, friendly, and culturally sensitive tone, with a standard speaking speed for clear comprehension. "
-                                f"Text: {response['responseText']},"
-                            ])
+                            response["responseText"] = "".join(
+                                [
+                                    # f"Style: {fc.args['original_dialect']} dialect, {fc.args['gender']} voice persona (model's persona, not user), friendly and engaging tone, normal speed."
+                                    # f"Style: Narrate in an authentic {fc.args['original_dialect']} Arabic dialect, using a {fc.args['gender']} voice persona (representing the model's persona, not the user). Adopt a warm, friendly, and engaging tone with a natural, conversational flow. Maintain a standard speaking speed suitable for clear comprehension. Incorporate a rich vocabulary and common colloquial expressions specific to the {fc.args['original_dialect']} dialect to enhance cultural authenticity. "
+                                    f"Style: Narrate in an authentic {fc.args['original_dialect']} Arabic dialect, using a {fc.args['gender']} voice persona (your persona, not user). ",
+                                    f"Adopt a warm, friendly, and culturally sensitive tone, with a standard speaking speed for clear comprehension. "
+                                    f"Text: {response['responseText']},",
+                                ]
+                            )
                             logging.info(f"\n\nresponse: {response}\n\n")
 
                             function_response = FunctionResponse(

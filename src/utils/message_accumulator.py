@@ -1,6 +1,7 @@
+import asyncio
 import datetime
 import logging
-import asyncio
+
 from agents.live_agent import MessageType
 from db.service import DatabaseService, MessageDirection
 
@@ -48,7 +49,7 @@ class MessageAccumulator:
 
         max_retries = 3
         retry_count = 0
-        
+
         while retry_count < max_retries:
             try:
                 # Save accumulated text if any
@@ -62,9 +63,11 @@ class MessageAccumulator:
                             content_type=MessageType.TEXT,
                             text_content=complete_text,
                         ),
-                        timeout=10.0
+                        timeout=10.0,
                     )
-                    logger.info(f"Saved complete text message: {len(complete_text)} chars")
+                    logger.info(
+                        f"Saved complete text message: {len(complete_text)} chars"
+                    )
 
                 # Save accumulated transcription if any
                 if self.transcription_pieces:
@@ -77,29 +80,35 @@ class MessageAccumulator:
                             content_type=MessageType.OUTPUT_TRANSCRIPTION,
                             text_content=complete_transcription,
                         ),
-                        timeout=10.0
+                        timeout=10.0,
                     )
-                    logger.info(f"Saved complete transcription: {len(complete_transcription)} chars")
-                
+                    logger.info(
+                        f"Saved complete transcription: {len(complete_transcription)} chars"
+                    )
+
                 # break if all pieces are saved successfully
                 break
-                
+
             except asyncio.TimeoutError:
                 retry_count += 1
-                logger.warning(f"Database save timeout, retry {retry_count}/{max_retries}")
+                logger.warning(
+                    f"Database save timeout, retry {retry_count}/{max_retries}"
+                )
                 if retry_count >= max_retries:
                     logger.error("Failed to save message after all retries")
                     break
-                await asyncio.sleep(1) # wait before retrying
-                
+                await asyncio.sleep(1)  # wait before retrying
+
             except Exception as e:
                 retry_count += 1
-                logger.error(f"Failed to save accumulated message (attempt {retry_count}): {e}")
+                logger.error(
+                    f"Failed to save accumulated message (attempt {retry_count}): {e}"
+                )
                 if retry_count >= max_retries:
                     logger.error("Failed to save message after all retries")
                     break
                 await asyncio.sleep(1)
-                
+
             finally:
                 if retry_count >= max_retries or retry_count == 0:
                     self.reset()

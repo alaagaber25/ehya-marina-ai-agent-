@@ -1,17 +1,17 @@
-import cloudscraper
 import functools
 import logging
-from typing import Any, Dict, List, Optional
-from requests.exceptions import ConnectionError, RequestException, Timeout
 import time
+from typing import Any, Dict, List, Optional
+
+import cloudscraper
+from requests.exceptions import ConnectionError, RequestException, Timeout
 
 logging.basicConfig(level=logging.INFO)
 
 # Initialize the scraper once
 # We have use cloudscraper to handle potential bot detection because it can simulate a real browser environment which the requests library cannot.
-scraper = cloudscraper.create_scraper(
-    browser={"custom": "ScraperBot/1.0"}
-)
+scraper = cloudscraper.create_scraper(browser={"custom": "ScraperBot/1.0"})
+
 
 # --- Cached fetch function ---
 @functools.cache
@@ -25,17 +25,21 @@ def fetch_units_from_api(project_id: str) -> List[Dict[str, Any]]:
 
     for attempt in range(retries):
         try:
-            logging.info(f"API: Attempt {attempt + 1}/{retries} to fetch data from {api_url}")
+            logging.info(
+                f"API: Attempt {attempt + 1}/{retries} to fetch data from {api_url}"
+            )
             response = scraper.get(api_url, timeout=15)
             response.raise_for_status()
             all_units = response.json().get("data", {}).get("units", [])
-            logging.info(f"API: Retrieved {len(all_units)} units for project {project_id}")
+            logging.info(
+                f"API: Retrieved {len(all_units)} units for project {project_id}"
+            )
             return all_units
 
         except (ConnectionError, Timeout, RequestException) as e:
             logging.warning(f"API: Attempt {attempt + 1} failed: {e}")
             if attempt < retries - 1:
-                wait = 2 ** attempt
+                wait = 2**attempt
                 logging.info(f"API: Retrying in {wait} seconds...")
                 time.sleep(wait)
             else:

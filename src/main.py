@@ -13,8 +13,8 @@ import config as config
 from agents.live_agent import LiveAgent, MessageType
 from agents.voomi_agent import Voomi
 from prompts import live_prompt
-from utils.audio_codec import AudioCodec
 from tools import units_fetcher
+from utils.audio_codec import AudioCodec
 
 # Configure logging
 logging.getLogger("google_genai.types").setLevel(logging.ERROR)

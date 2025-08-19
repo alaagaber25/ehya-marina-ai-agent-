@@ -15,8 +15,8 @@ FLAMANT_PROJECT_DESCRIPTION = {
                 "Culture & Learning: KFUPM, King Abdulaziz Center for World Culture – Ithra.",
                 "Family & Discovery: Sci-Tech Technology Center.",
                 "Shopping & Lifestyle: Al Rashid Mall.",
-                "Sea & Leisure: Al Khobar Corniche."
-            ]
+                "Sea & Leisure: Al Khobar Corniche.",
+            ],
         },
         {
             "heading": "🏢 Architectural Elegance",
@@ -24,8 +24,8 @@ FLAMANT_PROJECT_DESCRIPTION = {
                 "First premium residential concept of its kind in KSA.",
                 "Unified, nature-meets-urban design across 4-storey buildings.",
                 "Spacious units with private balconies, covered parking, and a guard suite.",
-                "Distinctive interior & exterior finishes with meticulous attention to detail."
-            ]
+                "Distinctive interior & exterior finishes with meticulous attention to detail.",
+            ],
         },
         {
             "heading": "🌟 Resort-Style Amenities (5★)",
@@ -38,20 +38,15 @@ FLAMANT_PROJECT_DESCRIPTION = {
                 "50m infinity pool.",
                 "Cinema.",
                 "Housekeeping services.",
-                "24/7 security."
-            ]
+                "24/7 security.",
+            ],
         },
         {
             "heading": "🏠 Apartment Types",
-            "bullets": [
-                "1 Bedroom",
-                "2 Bedrooms",
-                "2.5 Bedrooms",
-                "3.5 Bedrooms"
-            ]
-        }
+            "bullets": ["1 Bedroom", "2 Bedrooms", "2.5 Bedrooms", "3.5 Bedrooms"],
+        },
     ],
-    "closing": "Flamant isn’t just a home—it’s a daily experience of luxury and ease at Al Khobar’s most desirable address."
+    "closing": "Flamant isn’t just a home—it’s a daily experience of luxury and ease at Al Khobar’s most desirable address.",
 }
 
 Unit_ONE_Description = """
@@ -70,16 +65,16 @@ Unit_THREE_HALF_Description = """
 A spacious 3.5-Bedroom residence with dual views, perfectly designed for large families, blending sophistication, comfort, and vibrant living.
 """
 
-BUILDING_DESCRIPTION="We have a total of 4 buildings, each designed with a unique architectural style and offering a range of luxurious apartments."
+BUILDING_DESCRIPTION = "We have a total of 4 buildings, each designed with a unique architectural style and offering a range of luxurious apartments."
 
-Tour_Locations=[
-  'Entrance',
-  'Guest Toilet',
-  'Dining / Kitchen',
-  'Living Room',
-  'Passage',
-  'Master Bedroom',
-  'Master Bathroom'
+Tour_Locations = [
+    "Entrance",
+    "Guest Toilet",
+    "Dining / Kitchen",
+    "Living Room",
+    "Passage",
+    "Master Bedroom",
+    "Master Bathroom",
 ]
 
 Tour_Locations_Descriptions = {
@@ -89,7 +84,7 @@ Tour_Locations_Descriptions = {
     "Living Room": "A spacious, sunlit living area designed for both relaxing evenings and vibrant gatherings—your perfect spot for making cherished memories.",
     "Passage": "An elegantly crafted passageway that enhances the home’s flow, creating a sense of openness while connecting every space seamlessly.",
     "Master Bedroom": "Your private sanctuary—generously sized, elegantly designed, and perfectly secluded for the ultimate in comfort and relaxation.",
-    "Master Bathroom": "A luxurious master bathroom featuring top-quality fittings, spacious design, and a spa-like atmosphere—bringing everyday indulgence into your home."
+    "Master Bathroom": "A luxurious master bathroom featuring top-quality fittings, spacious design, and a spa-like atmosphere—bringing everyday indulgence into your home.",
 }
 
 
@@ -106,7 +101,7 @@ AGENT_SCRATCHPAD = """
 - Highlight proximity to landmarks and amenities.
 """
 
-PROJECT_FEATURES="""
+PROJECT_FEATURES = """
 Imagine living in the heart of Al Khobar, in a location that blends luxury with modern city life—just minutes away from the city’s most iconic landmarks: Corniche Al Rakah, the King Abdulaziz Center for World Culture, King Fahd University of Petroleum and Minerals, and major shopping destinations like Al Rashid Mall.
 Here at Flamant, you’re not just buying a home… you’re investing in a distinguished lifestyle—close to the sea, surrounded by top-tier services and amenities, in an area where value is growing every single day.
 This is the place you’ll love coming back to.
@@ -115,15 +110,22 @@ This is the place you’ll love coming back to.
 # 2. Agent Prompt Template - Final Cleaned Version
 # ------------------------------------------------------------------
 
-def custom_agent_prompt(project_id: str, agent_name: str, agent_gender: str, dialect: str, languages_skills: str) -> PromptTemplate:
-  """
-  Creates a dialect-aware prompt template that dynamically adapts based on 
-  the provided dialect and gender parameters.
-  
-  Returns:
-      PromptTemplate: A LangChain prompt template with dialect integration
-  """
-  AGENT_PROMPT_TEMPLATE = """
+
+def custom_agent_prompt(
+    project_id: str,
+    agent_name: str,
+    agent_gender: str,
+    dialect: str,
+    languages_skills: str,
+) -> PromptTemplate:
+    """
+    Creates a dialect-aware prompt template that dynamically adapts based on
+    the provided dialect and gender parameters.
+
+    Returns:
+        PromptTemplate: A LangChain prompt template with dialect integration
+    """
+    AGENT_PROMPT_TEMPLATE = """
   [SYSTEM INSTRUCTIONS]
 
 ═══════════════════════════════════════════════════════════════════════════════
@@ -795,32 +797,27 @@ AGENT SCRATCHPAD: {agent_scratchpad}
 ═══════════════════════════════════════════════════════════════════════════════
 
   """
-  # ------------------------------------------------------------------
-  # 3. Create the Final Prompt
-  # ------------------------------------------------------------------
-  return PromptTemplate(
-      template=AGENT_PROMPT_TEMPLATE,
-      input_variables=[
-          "input", 
-          "chat_history", 
-          "tool_names", 
-          "tools"
-      ]
-  ).partial(
-      project_description=FLAMANT_PROJECT_DESCRIPTION,
-      unit_one_description=Unit_ONE_Description,
-      unit_two_description=Unit_TWO_Description,
-      unit_two_half_description=Unit_TWO_HALF_Description,
-      unit_three_description=Unit_THREE_HALF_Description,
-      tour_locations=Tour_Locations,
-      tour_locations_descriptions=Tour_Locations_Descriptions,
-      master_plan_details=MASTER_PLAN_DETAILS,
-      agent_scratchpad=AGENT_SCRATCHPAD,
-      dialect=dialect,
-      agent_name=agent_name,
-      agent_gender=agent_gender,
-      project_id=project_id,
-      languages_skills=languages_skills,
-      project_features=PROJECT_FEATURES,
-      building_description=BUILDING_DESCRIPTION
-  )
+    # ------------------------------------------------------------------
+    # 3. Create the Final Prompt
+    # ------------------------------------------------------------------
+    return PromptTemplate(
+        template=AGENT_PROMPT_TEMPLATE,
+        input_variables=["input", "chat_history", "tool_names", "tools"],
+    ).partial(
+        project_description=FLAMANT_PROJECT_DESCRIPTION,
+        unit_one_description=Unit_ONE_Description,
+        unit_two_description=Unit_TWO_Description,
+        unit_two_half_description=Unit_TWO_HALF_Description,
+        unit_three_description=Unit_THREE_HALF_Description,
+        tour_locations=Tour_Locations,
+        tour_locations_descriptions=Tour_Locations_Descriptions,
+        master_plan_details=MASTER_PLAN_DETAILS,
+        agent_scratchpad=AGENT_SCRATCHPAD,
+        dialect=dialect,
+        agent_name=agent_name,
+        agent_gender=agent_gender,
+        project_id=project_id,
+        languages_skills=languages_skills,
+        project_features=PROJECT_FEATURES,
+        building_description=BUILDING_DESCRIPTION,
+    )

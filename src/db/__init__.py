@@ -49,6 +49,7 @@ except Exception:
 
     AsyncSessionLocal = mock_session
 
+
 # Dependency to get a session
 async def get_db():
     async with AsyncSessionLocal() as session:
@@ -56,6 +57,7 @@ async def get_db():
             yield session
         finally:
             await session.close()
+
 
 # Create tables (or no‑op if mock)
 async def create_tables():

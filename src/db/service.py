@@ -55,12 +55,12 @@ class DatabaseService:
         result = await db.execute(
             select(Message)
             .where(Message.chat_id == chat_id)
-            .order_by(Message.created_at) # type: ignore
+            .order_by(Message.created_at)  # type: ignore
         )
         return result.scalars().all()
 
     @staticmethod
     async def get_all_chats(db: AsyncSession):
         """Get all chat sessions"""
-        result = await db.execute(select(Chat).order_by(Chat.created_at.desc())) # type: ignore
+        result = await db.execute(select(Chat).order_by(Chat.created_at.desc()))  # type: ignore
         return result.scalars().all()

@@ -17,7 +17,7 @@ GOOGLE_LiveAPI_KEY = os.getenv("GOOGLE_LiveAPI_KEY", "")
 if not GOOGLE_LiveAPI_KEY:
     raise ValueError("ERROR: GOOGLE_LiveAPI_KEY not found in .env file")
 
-LIVEAPI_MODEL= os.getenv("LIVEAPI_MODEL")
+LIVEAPI_MODEL = os.getenv("LIVEAPI_MODEL")
 if not LIVEAPI_MODEL:
     raise ValueError("ERROR: LIVEAPI_MODEL not found in .env file")
 
