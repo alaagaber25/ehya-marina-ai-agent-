@@ -13,7 +13,6 @@ dependencies = [
     "langchain-community",
     "langchain-openai-api-bridge",
     "google-generativeai>=0.3.1",
-    "pygame>=2.6.1",
     "fastapi[all]>=0.104.0",
     "tiktoken",
     "cloudscraper",
@@ -25,8 +24,8 @@ dependencies = [
     "python-dotenv>=1.0.0",
     "requests>=2.31.0",
     # PostgreSQL dependencies
-    "sqlmodel>=0.0.24",
-    "asyncpg>=0.30.0",
+    # "sqlmodel>=0.0.24",
+    # "asyncpg>=0.30.0",
 ]
 
 [project.optional-dependencies]
@@ -36,7 +35,7 @@ dev = [
     "isort>=5.12.0",
     "mypy>=1.0.0",
     "ruff>=0.1.0",
-    "pytest-postgresql>=5.0.0",
+    # "pytest-postgresql>=5.0.0",
 ]
 
 [tool.uv]
@@ -46,7 +45,7 @@ dev-dependencies = [
     "isort>=5.12.0",
     "mypy>=1.0.0",
     "ruff>=0.1.0",
-    "pytest-postgresql>=5.0.0",
+    # "pytest-postgresql>=5.0.0",
 ]
 
 [tool.black]
