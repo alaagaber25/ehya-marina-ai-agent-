@@ -148,6 +148,7 @@ class LiveAgent:
         return self
 
     async def __aexit__(self, exc_type, exc_value, traceback):
+        await self._session.close()
         await self.__session.__aexit__(exc_type, exc_value, traceback)
 
     async def send_text(self, text: str):
