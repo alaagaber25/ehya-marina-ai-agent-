@@ -169,6 +169,34 @@ class LiveAgent:
 
     async def receive_message(self) -> AsyncGenerator[AgentMessage, None]:
         """Improved message receiving with proper interruption handling"""
+        def process_final_text(text: str) -> AgentMessage:
+            """
+            Parses the model's final text response (which should be JSON)
+            and wraps it in the desired structure for the frontend.
+            """
+            try:
+                # النموذج من المفترض أن يُرجع نصًا بصيغة JSON
+                parsed_json = json.loads(text)
+
+                # هذا هو الشكل الذي تريده الواجهة الأمامية
+                final_data = {
+                    "action": "finalize_response",
+                    "action_input": parsed_json
+                }
+                # نرسل الرسالة كـ "tool_call_response" كما طلبت
+                return AgentMessage(type=MessageType.TOOL_CALL_RESPONSE, data=final_data)
+            except (json.JSONDecodeError, TypeError):
+                # في حالة أن النموذج أرسل نصًا عاديًا بدلاً من JSON
+                fallback_data = {
+                    "action": "finalize_response",
+                    "action_input": {
+                        "action": "answer",
+                        "action_data": None,
+                        "responseText": text
+                    }
+                }
+                return AgentMessage(type=MessageType.TOOL_CALL_RESPONSE, data=fallback_data)
+
         async for message in self._session.receive():
             # Handle server-side interruptions
             if message.server_content and message.server_content.interrupted:
@@ -229,25 +257,46 @@ class LiveAgent:
                         try:
                             fc.args['original_dialect'] = self.__dialect
                             logger.info(f"\n\nCalling tool: {fc.name} with args: {fc.args}\n\n")
-                            response = self.__functions_to_call[fc.name](**fc.args)
+                            tool_output = self.__functions_to_call[fc.name](**fc.args)
+                            if isinstance(tool_output, dict):
+                                # إذا كانت النتيجة قاموسًا بالفعل (من finalize_response)، استخدمها مباشرة
+                                response_payload = tool_output
+                            else:
+                                # إذا كانت شيئًا آخر (مثل قائمة من get_project_units)، قم بتغليفها
+                                response_payload = {"result": tool_output}
+
                             
                             # # Format the LangChain response before sending it to LiveAPI
-                            response['responseText'] = "".join([
-                                # f"Style: {fc.args['original_dialect']} dialect, {fc.args['gender']} voice persona (model's persona, not user), friendly and engaging tone, normal speed."
-                                # f"Style: Narrate in an authentic {fc.args['original_dialect']} Arabic dialect, using a {fc.args['gender']} voice persona (representing the model's persona, not the user). Adopt a warm, friendly, and engaging tone with a natural, conversational flow. Maintain a standard speaking speed suitable for clear comprehension. Incorporate a rich vocabulary and common colloquial expressions specific to the {fc.args['original_dialect']} dialect to enhance cultural authenticity. "
-                                f"Style: Narrate in an authentic {fc.args['original_dialect']} Arabic dialect, using a {fc.args['gender']} voice persona (your persona, not user). ",
-                                f"Adopt a warm, friendly, and culturally sensitive tone, with a standard speaking speed for clear comprehension. "
-                                f"Text: {response['responseText']},"
-                            ])
-                            logging.info(f"\n\nresponse: {response}\n\n")
-
+                            # response['responseText'] = "".join([
+                            #     # f"Style: {fc.args['original_dialect']} dialect, {fc.args['gender']} voice persona (model's persona, not user), friendly and engaging tone, normal speed."
+                            #     # f"Style: Narrate in an authentic {fc.args['original_dialect']} Arabic dialect, using a {fc.args['gender']} voice persona (representing the model's persona, not the user). Adopt a warm, friendly, and engaging tone with a natural, conversational flow. Maintain a standard speaking speed suitable for clear comprehension. Incorporate a rich vocabulary and common colloquial expressions specific to the {fc.args['original_dialect']} dialect to enhance cultural authenticity. "
+                            #     f"Style: Narrate in an authentic {fc.args['original_dialect']} Arabic dialect, using a {fc.args['gender']} voice persona (your persona, not user). ",
+                            #     f"Adopt a warm, friendly, and culturally sensitive tone, with a standard speaking speed for clear comprehension. "
+                            #     f"Text: {response['responseText']},"
+                            # ])
                             function_response = FunctionResponse(
-                                name=fc.name, response=response, id=fc.id
+                                name=fc.name, response=response_payload, id=fc.id
                             )
+
                             yield AgentMessage(
                                 type=MessageType.TOOL_CALL_RESPONSE,
-                                data=response,
+                                data=response_payload,
                             )
+
+        
+                            function_responses.append(function_response)
+
+                        except Exception as e:
+                            logger.error(f"Tool call {fc.name} failed: {e}")
+
+
+                            # function_response = FunctionResponse(
+                            #     name=fc.name, response=response, id=fc.id
+                            # )
+                            # yield AgentMessage(
+                            #     type=MessageType.TOOL_CALL_RESPONSE,
+                            #     data=response,
+                            # )
                             function_responses.append(function_response)
                         except Exception as e:
                             logger.error(f"Tool call {fc.name} failed: {e}")

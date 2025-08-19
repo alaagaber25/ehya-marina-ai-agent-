@@ -8,8 +8,7 @@ logging.basicConfig(level=logging.INFO)
 
 LEADS_FILE_PATH = os.path.relpath(os.path.join(os.path.dirname(__file__), 'tool_outputs', 'leads.csv'))
 
-@tool
-def save_lead(name: str, phone: str, unit_code: str, notes: str) -> str:
+def save_lead(name: str, phone: str, unit_code: str, notes: str, **kwargs) -> str:
     """
     Saves the information of an interested user (lead) for follow-up by a sales agent.
 

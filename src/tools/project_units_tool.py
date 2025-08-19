@@ -6,7 +6,7 @@ from tools.units_fetcher import fetch_units_from_api
 
 logging.basicConfig(level=logging.INFO)
 
-@tool
+
 def get_project_units(
     project_id: str,
     unit_code: Optional[str] = None,
@@ -25,7 +25,8 @@ def get_project_units(
     unit_type_filter: Optional[str] = None,
     price_tolerance: Optional[float] = 0.05,
     area_tolerance: Optional[float] = 0.05,
-    pick_random: Optional[bool] = False
+    pick_random: Optional[bool] = False,
+     **kwargs
 ) -> List[Dict[str, Any]]:
     """
     Retrieves project units from a cached source (backed by `fetch_units_from_api("<project_id>")`).

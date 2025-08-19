@@ -11,10 +11,11 @@ from pydantic import BaseModel, Field
 
 import config as config
 from agents.live_agent import LiveAgent, MessageType
-from agents.voomi_agent import Voomi
-from prompts import live_prompt
+
+from prompts.live_prompt import custom_agent_prompt
 from utils.audio_codec import AudioCodec
 from tools import units_fetcher
+from tools import get_project_units, save_lead ,finalize_response
 
 # Configure logging
 logging.getLogger('google_genai.types').setLevel(logging.ERROR)
@@ -69,7 +70,7 @@ async def websocket_endpoint(ws: WebSocket):
 
         # Initialize agent and session
         session_id = f"session_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-        voomi = Voomi(project_id="flamant", agent_name=agent_name, agent_gender=agent_gender, dialect=dialect,languages_skills=languages_skills)
+        # voomi = Voomi(project_id="flamant", agent_name=agent_name, agent_gender=agent_gender, dialect=dialect,languages_skills=languages_skills)
 
         logger.info(f"Created session: {session_id}")
 
@@ -101,23 +102,25 @@ async def websocket_endpoint(ws: WebSocket):
             MessageType.INTERRUPTION: lambda data: send_json_streaming("interruption", {"interrupted": data}),
             MessageType.TOOL_CALL_RESPONSE: lambda data: send_json_streaming("tool_call_response", data),
         }
-
+        tools = [get_project_units, save_lead,finalize_response]
         # Initialize Live Agent
         async with LiveAgent(
             config={
                 "API_KEY": config.GOOGLE_API_KEY,
                 "ENABLE_TRANSCRIPTION": True,
                 "MODEL": config.LIVEAPI_MODEL,
-                "SYSTEM_PROMPT": live_prompt.get_system_prompt(
-                    dialect=dialect, 
-                    language_code=language_code, 
-                    gender=agent_gender
+                "SYSTEM_PROMPT": custom_agent_prompt(
+                    project_id="flamant",
+                    agent_name=agent_name,
+                    agent_gender=agent_gender,
+                    dialect=dialect,
+                    languages_skills=languages_skills
                 ),
                 "VOICE_NAME": voice_name,
                 "DIALECT": dialect,
                 "LANGUAGE_CODE": language_code,
             },
-            tools=[voomi],
+            tools=tools,
         ) as live_agent:
 
             async def receive_messages():
