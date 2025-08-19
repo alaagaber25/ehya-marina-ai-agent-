@@ -3,6 +3,7 @@ from collections.abc import AsyncGenerator, Callable
 from dataclasses import dataclass
 from enum import StrEnum, auto
 from typing import Any, Literal, NotRequired, TypedDict
+import json
 
 from google import genai
 from google.genai.types import (
@@ -29,7 +30,6 @@ class LiveAgentConfig(TypedDict):
     MODEL: str
     SYSTEM_PROMPT: str
     ENABLE_TRANSCRIPTION: bool
-    # Add VAD configuration options
     VAD_START_SENSITIVITY: NotRequired[Literal["low"] | Literal["high"]]
     VAD_END_SENSITIVITY: NotRequired[Literal["low"] | Literal["high"]]
     VAD_SILENCE_DURATION_MS: NotRequired[int]
@@ -43,8 +43,8 @@ class MessageType(StrEnum):
     TOOL_CALL = auto()
     INPUT_TRANSCRIPTION = auto()
     OUTPUT_TRANSCRIPTION = auto()
-    INTERRUPTION = auto()  # Add interruption message type
-    TOOL_CALL_CANCELLED = auto()  # Add tool call cancellation
+    INTERRUPTION = auto()
+    TOOL_CALL_CANCELLED = auto()
     TOOL_CALL_RESPONSE = auto()
 
 
@@ -65,15 +65,13 @@ class LiveAgent:
         realtime_input_config = self.__get_realtime_input_config(config)
         voice_name = config.get("VOICE_NAME")
         if not voice_name:
-            logger.warning(
-                "VOICE_NAME not specified in config, using default voice."
-            )
+            logger.warning("VOICE_NAME not specified in config, using default voice.")
+            
         self.__live_config = LiveConnectConfig(
             response_modalities=[Modality.AUDIO],
             speech_config=SpeechConfig(
                 voice_config=VoiceConfig(
                     prebuilt_voice_config=PrebuiltVoiceConfig(
-                        # You can specify a voice name here if needed
                         voice_name=voice_name
                     )
                 ),
@@ -84,17 +82,15 @@ class LiveAgent:
             ),
             input_audio_transcription=audio_transcription_config,
             output_audio_transcription=audio_transcription_config,
-            realtime_input_config=realtime_input_config,  # type: ignore
+            realtime_input_config=realtime_input_config,
         )
 
         self.__model = config.get("MODEL")
         self.__functions_to_call = {tool.__name__: tool for tool in tools}
-        self._interrupted_tool_calls = set()  # Track interrupted tool calls
+        self._interrupted_tool_calls = set()
 
     @staticmethod
-    def __get_transcroption_config(
-        config: LiveAgentConfig,
-    ):
+    def __get_transcroption_config(config: LiveAgentConfig):
         if config.get("ENABLE_TRANSCRIPTION"):
             return AudioTranscriptionConfig()
         return None
@@ -104,7 +100,6 @@ class LiveAgent:
         """Configure VAD settings for better interruption handling"""
         vad_config: RealtimeInputConfigOrDict = {}
 
-        # Map string values to enum values
         start_sensitivity_map = {
             "low": StartSensitivity.START_SENSITIVITY_LOW,
             "high": StartSensitivity.START_SENSITIVITY_HIGH,
@@ -154,7 +149,7 @@ class LiveAgent:
         """Send text message with turn completion"""
         await self._session.send_client_content(
             turns=Content(role="user", parts=[Part(text=text)]),
-            turn_complete=True,  # Explicitly mark turn as complete
+            turn_complete=True,
         )
 
     async def send_audio(self, audio: bytes):
@@ -167,36 +162,20 @@ class LiveAgent:
         """Signal end of audio stream (important for VAD)"""
         await self._session.send_realtime_input(audio_stream_end=True)
 
+    def _create_error_response(self, error_msg: str, tool_name: str) -> dict:
+        """Create standardized error response for tool failures"""
+        return {
+            "action": "finalize_response",
+            "action_input": {
+                "action": "answer",
+                "action_data": None,
+                "responseText": f"I encountered an issue while processing your request. Please try again or contact support if the problem persists."
+            }
+        }
+
     async def receive_message(self) -> AsyncGenerator[AgentMessage, None]:
-        """Improved message receiving with proper interruption handling"""
-        def process_final_text(text: str) -> AgentMessage:
-            """
-            Parses the model's final text response (which should be JSON)
-            and wraps it in the desired structure for the frontend.
-            """
-            try:
-                # النموذج من المفترض أن يُرجع نصًا بصيغة JSON
-                parsed_json = json.loads(text)
-
-                # هذا هو الشكل الذي تريده الواجهة الأمامية
-                final_data = {
-                    "action": "finalize_response",
-                    "action_input": parsed_json
-                }
-                # نرسل الرسالة كـ "tool_call_response" كما طلبت
-                return AgentMessage(type=MessageType.TOOL_CALL_RESPONSE, data=final_data)
-            except (json.JSONDecodeError, TypeError):
-                # في حالة أن النموذج أرسل نصًا عاديًا بدلاً من JSON
-                fallback_data = {
-                    "action": "finalize_response",
-                    "action_input": {
-                        "action": "answer",
-                        "action_data": None,
-                        "responseText": text
-                    }
-                }
-                return AgentMessage(type=MessageType.TOOL_CALL_RESPONSE, data=fallback_data)
-
+        """Improved message receiving with proper interruption and error handling"""
+        
         async for message in self._session.receive():
             # Handle server-side interruptions
             if message.server_content and message.server_content.interrupted:
@@ -241,70 +220,98 @@ class LiveAgent:
             if message.text:
                 yield AgentMessage(type=MessageType.TEXT, data=message.text)
 
-            # Handle tool calls
+            # Handle tool calls with improved error handling
             if message.tool_call and message.tool_call.function_calls:
                 function_responses: list[FunctionResponse] = []
+                
                 for fc in message.tool_call.function_calls:
                     # Skip if this tool call was already cancelled
                     if fc.id in self._interrupted_tool_calls:
+                        logger.info(f"Skipping cancelled tool call: {fc.id}")
                         continue
 
                     if fc.name in self.__functions_to_call:
-                        if fc.args is None:
-                            fc.args = {}
-                        if 'dialect' not in fc.args:
-                            fc.args['dialect'] = self.__dialect
                         try:
-                            fc.args['original_dialect'] = self.__dialect
-                            logger.info(f"\n\nCalling tool: {fc.name} with args: {fc.args}\n\n")
+                            # Prepare arguments
+                            if fc.args is None:
+                                fc.args = {}
+                            
+                            # Add dialect info if not present
+                            if 'dialect' not in fc.args and self.__dialect:
+                                fc.args['dialect'] = self.__dialect
+                            if 'original_dialect' not in fc.args and self.__dialect:
+                                fc.args['original_dialect'] = self.__dialect
+
+                            logger.info(f"Calling tool: {fc.name} with args: {fc.args}")
+                            
+                            # Execute tool
                             tool_output = self.__functions_to_call[fc.name](**fc.args)
+                            
+                            # Standardize tool output
                             if isinstance(tool_output, dict):
-                                # إذا كانت النتيجة قاموسًا بالفعل (من finalize_response)، استخدمها مباشرة
                                 response_payload = tool_output
                             else:
-                                # إذا كانت شيئًا آخر (مثل قائمة من get_project_units)، قم بتغليفها
                                 response_payload = {"result": tool_output}
 
-                            
-                            # # Format the LangChain response before sending it to LiveAPI
-                            # response['responseText'] = "".join([
-                            #     # f"Style: {fc.args['original_dialect']} dialect, {fc.args['gender']} voice persona (model's persona, not user), friendly and engaging tone, normal speed."
-                            #     # f"Style: Narrate in an authentic {fc.args['original_dialect']} Arabic dialect, using a {fc.args['gender']} voice persona (representing the model's persona, not the user). Adopt a warm, friendly, and engaging tone with a natural, conversational flow. Maintain a standard speaking speed suitable for clear comprehension. Incorporate a rich vocabulary and common colloquial expressions specific to the {fc.args['original_dialect']} dialect to enhance cultural authenticity. "
-                            #     f"Style: Narrate in an authentic {fc.args['original_dialect']} Arabic dialect, using a {fc.args['gender']} voice persona (your persona, not user). ",
-                            #     f"Adopt a warm, friendly, and culturally sensitive tone, with a standard speaking speed for clear comprehension. "
-                            #     f"Text: {response['responseText']},"
-                            # ])
+                            # Create function response
                             function_response = FunctionResponse(
-                                name=fc.name, response=response_payload, id=fc.id
+                                name=fc.name, 
+                                response=response_payload, 
+                                id=fc.id
                             )
 
+                            # Yield to client
                             yield AgentMessage(
                                 type=MessageType.TOOL_CALL_RESPONSE,
                                 data=response_payload,
                             )
 
-        
                             function_responses.append(function_response)
+                            logger.info(f"Tool {fc.name} executed successfully")
 
                         except Exception as e:
                             logger.error(f"Tool call {fc.name} failed: {e}")
+                            
+                            # Create error response
+                            error_response = self._create_error_response(str(e), fc.name)
+                            
+                            function_response = FunctionResponse(
+                                name=fc.name, 
+                                response=error_response, 
+                                id=fc.id
+                            )
 
+                            yield AgentMessage(
+                                type=MessageType.TOOL_CALL_RESPONSE,
+                                data=error_response,
+                            )
 
-                            # function_response = FunctionResponse(
-                            #     name=fc.name, response=response, id=fc.id
-                            # )
-                            # yield AgentMessage(
-                            #     type=MessageType.TOOL_CALL_RESPONSE,
-                            #     data=response,
-                            # )
                             function_responses.append(function_response)
-                        except Exception as e:
-                            logger.error(f"Tool call {fc.name} failed: {e}")
+                    else:
+                        logger.warning(f"Unknown tool called: {fc.name}")
+                        
+                        # Handle unknown tool
+                        error_response = self._create_error_response(
+                            f"Unknown tool: {fc.name}", fc.name
+                        )
+                        
+                        function_response = FunctionResponse(
+                            name=fc.name, 
+                            response=error_response, 
+                            id=fc.id
+                        )
+                        
+                        function_responses.append(function_response)
 
+                # Send all function responses back to the model
                 if function_responses:
-                    await self._session.send_tool_response(
-                        function_responses=function_responses
-                    )
+                    try:
+                        await self._session.send_tool_response(
+                            function_responses=function_responses
+                        )
+                        logger.info(f"Sent {len(function_responses)} tool responses")
+                    except Exception as e:
+                        logger.error(f"Failed to send tool responses: {e}")
 
             # Handle tool call cancellations
             if message.tool_call_cancellation and message.tool_call_cancellation.ids:
