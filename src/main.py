@@ -15,17 +15,10 @@ from pydantic import BaseModel, Field
 
 import config as config
 from agents.live_agent import LiveAgent, MessageType
-<<<<<<< HEAD
-from agents.voomi_agent import Voomi
-from prompts import live_prompt
-from tools import units_fetcher
-from utils.audio_codec import AudioCodec
-=======
 from prompts.live_prompt import custom_agent_prompt
 from utils.audio_codec import AudioCodec
 from tools import units_fetcher
 from tools import get_project_units, save_lead, finalize_response
->>>>>>> Liveapi-agent
 
 # Configure logging
 logging.getLogger("google_genai.types").setLevel(logging.ERROR)
@@ -51,32 +44,11 @@ app = FastAPI(title="Voomi Live WebSocket", lifespan=lifespan)
 
 class ClientData(BaseModel):
     """WebSocket client data model"""
-
     text: str | None = None
     audio: str | None = None
     audio_stream_end: bool = Field(default=False)
 
 
-<<<<<<< HEAD
-websocket_dependencies = []
-if getattr(config, "ENABLE_RATE_LIMIT", False):
-    # Google's session limit is 15 minutes, so we only limit the ip to make at most 3 requests in this window
-    websocket_dependencies.append(Depends(WebSocketRateLimiter(times=3, minutes=15)))
-
-
-@app.websocket("/ws", dependencies=websocket_dependencies)
-async def websocket_endpoint(ws: WebSocket):
-    """
-    Main WebSocket endpoint for voice communication.
-    Handles real-time voice interaction with the AI agent.
-    """
-    await ws.accept()
-
-    # Get voice configuration from client
-    voice_config_raw = await ws.receive()
-    text_data = voice_config_raw.get("text")
-    parsed_data = json.loads(text_data)
-=======
 class MessageHandler:
     """Handles message processing with better error recovery"""
     
@@ -89,24 +61,19 @@ class MessageHandler:
     async def send_json_streaming(self, type_: str, data: Any) -> bool:
         """Send JSON message to client with improved error handling"""
         try:
+            logger.debug(f"Sending {type_} message")
             if not self.is_connected or self.websocket.client_state != WebSocketState.CONNECTED:
                 return False
                 
-            timestamp = datetime.now()
-            response = {
+
+            await self.websocket.send_json({
                 "type": type_,
                 "data": data,
                 "session_id": self.session_id,
-                "timestamp": timestamp.isoformat(),
-            }
-
-            # Use asyncio.wait_for to prevent hanging
-            await asyncio.wait_for(
-                self.websocket.send_json(response), 
-                timeout=5.0
-            )
+                "timestamp": datetime.now().isoformat(),
+            })
+            logger.debug(f"Sent {type_} to client")
             return True
-
         except asyncio.TimeoutError:
             logger.warning(f"Timeout sending {type_} message")
             return False
@@ -127,7 +94,12 @@ class MessageHandler:
         }
 
 
-@app.websocket("/ws")
+websocket_dependencies = []
+if getattr(config, "ENABLE_RATE_LIMIT", False):
+    # Google's session limit is 15 minutes, so we only limit the ip to make at most 3 requests in this window
+    websocket_dependencies.append(Depends(WebSocketRateLimiter(times=3, minutes=15)))
+
+@app.websocket("/ws", dependencies=websocket_dependencies)
 async def websocket_endpoint(ws: WebSocket):
     """Main WebSocket endpoint for voice communication"""
     message_handler = None
@@ -135,171 +107,38 @@ async def websocket_endpoint(ws: WebSocket):
     try:
         await ws.accept()
         
-        # Get voice configuration from client
-        voice_config_raw = await asyncio.wait_for(ws.receive(), timeout=30.0)
-        text_data = voice_config_raw.get("text")
-        if not text_data:
-            await ws.close(code=1008, reason="Missing configuration")
-            return
-            
-        parsed_data = json.loads(text_data)
-        config_data = parsed_data.get("data", {})
         
-        dialect = config_data.get("dialect")
-        agent_gender = config_data.get("persona")
-        agent_name = config_data.get("name")
+        # Get voice configuration from client
+        voice_config_raw = await ws.receive()
+        text_data = voice_config_raw.get("text")
+        parsed_data = json.loads(text_data)
 
-        if not all([dialect, agent_gender, agent_name]):
-            await ws.close(code=1008, reason="Incomplete configuration")
-            return
->>>>>>> Liveapi-agent
+        dialect = parsed_data.get("data", {}).get("dialect")
+        agent_gender = parsed_data.get("data", {}).get("persona")
+        agent_name = parsed_data.get("data", {}).get("name")
 
-    dialect = parsed_data.get("data", {}).get("dialect")
-    agent_gender = parsed_data.get("data", {}).get("persona")
-    agent_name = parsed_data.get("data", {}).get("name")
+        voice_name = (
+            config.FEMALE_VOICE_NAME if agent_gender == "female" else config.MALE_VOICE_NAME
+        )
 
-<<<<<<< HEAD
-    voice_name = (
-        config.FEMALE_VOICE_NAME if agent_gender == "female" else config.MALE_VOICE_NAME
-    )
-
-    # Map dialect to language code
-    language_map = {
-        "EGYPTIAN": "ar-EG",
-        "SAUDI": "ar-SA",
-        "ENGLISH": "en-US",
-        "FRENCH": "fr-FR",
-        "SPANISH": "es-ES",
-    }
-    languages_skills = ["English", "Egyptian Arabic", "Saudi Arabic"]
-    language_code = language_map.get(dialect)
-
-    logger.info(
-        f"WebSocket connected - Dialect: {dialect}, Agent Name: {agent_name}, Agent Gender: {agent_gender}, Voice: {voice_name}"
-    )
-
-    # Initialize agent and session
-    session_id = f"session_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-    voomi = Voomi(
-        project_id="flamant",
-        agent_name=agent_name,
-        agent_gender=agent_gender,
-        dialect=dialect,
-        languages_skills=languages_skills,
-    )
-
-    logger.info(f"Created session: {session_id}")
-
-    async def send_json_streaming(type_: str, data):
-        """Send JSON message to client with streaming support"""
-        try:
-            logger.debug(f"Sending {type_} message")
-
-            await ws.send_json(
-                {
-                    "type": type_,
-                    "data": data,
-                    "session_id": session_id,
-                    "timestamp": datetime.now().isoformat(),
-                }
-            )
-            logger.debug(f"Sent {type_} to client")
-
-        except Exception as e:
-            logger.error(f"Failed to send {type_} message: {e}")
-
-    # Message type handlers
-    handle_message_type = {
-        MessageType.TEXT: lambda data: send_json_streaming("text-delta", data),
-        MessageType.INPUT_TRANSCRIPTION: lambda data: send_json_streaming(
-            "input_transcription-delta", data
-        ),
-        MessageType.OUTPUT_TRANSCRIPTION: lambda data: send_json_streaming(
-            "output_transcription-delta", data
-        ),
-        MessageType.AUDIO: lambda data: send_json_streaming(
-            "audio-delta", AudioCodec.to_wav(data)
-        ),
-        MessageType.INTERRUPTION: lambda data: send_json_streaming(
-            "interruption", {"interrupted": data}
-        ),
-        MessageType.TOOL_CALL_RESPONSE: lambda data: send_json_streaming(
-            "tool_call_response", data
-        ),
-    }
-
-    # Initialize Live Agent
-    async with LiveAgent(
-        config={
-            "API_KEY": config.GOOGLE_API_KEY,
-            "ENABLE_TRANSCRIPTION": True,
-            "MODEL": config.LIVEAPI_MODEL,
-            "SYSTEM_PROMPT": live_prompt.get_system_prompt(
-                dialect=dialect, language_code=language_code, gender=agent_gender
-            ),
-            "VOICE_NAME": voice_name,
-            "DIALECT": dialect,
-            "LANGUAGE_CODE": language_code,
-        },
-        tools=[voomi],
-    ) as live_agent:
-
-        async def receive_messages():
-            """Handle incoming WebSocket messages from client"""
-            while ws.client_state in [
-                WebSocketState.CONNECTED,
-                WebSocketState.CONNECTING,
-            ]:
-                raw_data = await ws.receive_text()
-                data = ClientData.model_validate_json(raw_data)
-
-                if data.text:
-                    logger.info(f"Received text: {data.text[:50]}...")
-                    await live_agent.send_text(data.text)
-
-                if data.audio:
-                    logger.info("Received audio chunk")
-                    await live_agent.send_audio(base64.b64decode(data.audio))
-
-                if data.audio_stream_end:
-                    logger.info("Audio stream ended")
-                    await live_agent.send_audio_stream_end()
-
-        async def send_messages():
-            """Handle outgoing messages from Live API to client"""
-            await ws.send_json(
-                {"type": "connected", "data": {"session_id": session_id}}
-            )
-
-            while ws.client_state in [
-                WebSocketState.CONNECTED,
-                WebSocketState.CONNECTING,
-            ]:
-                async for message in live_agent.receive_message():
-                    if handler := handle_message_type.get(message.type):
-                        await asyncio.wait_for(handler(message.data), timeout=30.0)
-
-        tasks = [
-            asyncio.create_task(receive_messages()),
-            asyncio.create_task(send_messages()),
-        ]
-
-=======
         # Map dialect to language code
         language_map = {
-            "EGYPTIAN": "ar-EG", 
-            "SAUDI": "ar-SA", 
-            "ENGLISH": "en-US", 
-            "FRENCH": "fr-FR", 
-            "SPANISH": "es-ES"
+            "EGYPTIAN": "ar-EG",
+            "SAUDI": "ar-SA",
+            "ENGLISH": "en-US",
+            "FRENCH": "fr-FR",
+            "SPANISH": "es-ES",
         }
         languages_skills = ["English", "Egyptian Arabic", "Saudi Arabic"]
         language_code = language_map.get(dialect)
 
-        logger.info(f"WebSocket connected - Dialect: {dialect}, Agent: {agent_name}, Gender: {agent_gender}")
+        logger.info(
+        f"WebSocket connected - Dialect: {dialect}, Agent Name: {agent_name}, Agent Gender: {agent_gender}, Voice: {voice_name}"
+    )
 
         # Initialize session
         session_id = f"session_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        logger.info(f"Created session: {session_id}")
         message_handler = MessageHandler(ws, session_id)
         
         # Tools setup
@@ -333,7 +172,10 @@ async def websocket_endpoint(ws: WebSocket):
             async def receive_messages():
                 """Handle incoming WebSocket messages from client"""
                 try:
-                    while message_handler.is_connected and ws.client_state == WebSocketState.CONNECTED:
+                    while ws.client_state in [
+                WebSocketState.CONNECTED,
+                WebSocketState.CONNECTING,
+            ]:
                         try:
                             # Add timeout to prevent hanging
                             raw_data = await asyncio.wait_for(ws.receive_text(), timeout=60.0)
@@ -373,26 +215,25 @@ async def websocket_endpoint(ws: WebSocket):
             async def send_messages():
                 """Handle outgoing messages from Live API to client"""
                 try:
-                    # Send initial connection confirmation
+                    # Send initial connection confirmation - FIXED
                     await message_handler.send_json_streaming("connected", {"session_id": session_id})
-                    
+        
                     # Get message handlers
                     handlers = message_handler.get_message_handlers()
 
-                    while message_handler.is_connected and ws.client_state == WebSocketState.CONNECTED:
+                    while ws.client_state in [
+                        WebSocketState.CONNECTED,
+                        WebSocketState.CONNECTING,
+                    ]:
                         try:
                             # Process messages with timeout
                             async for message in live_agent.receive_message():
                                 if not message_handler.is_connected:
                                     break
                                     
-                                handler = handlers.get(message.type)
-                                if handler:
+                                if handler := handlers.get(message.type):
                                     try:
-                                        success = await asyncio.wait_for(
-                                            handler(message.data), 
-                                            timeout=10.0
-                                        )
+                                        success = await asyncio.wait_for(handler(message.data), timeout=30.0)
                                         if not success:
                                             logger.warning(f"Failed to send {message.type} message")
                                             
@@ -412,15 +253,26 @@ async def websocket_endpoint(ws: WebSocket):
                 finally:
                     message_handler.is_connected = False
 
+            tasks = [
+            asyncio.create_task(receive_messages()),
+            asyncio.create_task(send_messages()),
+            ]
             # Run both message handlers concurrently with proper error handling
             try:
                 await asyncio.gather(
-                    receive_messages(),
-                    send_messages(),
+                    *tasks,
                     return_exceptions=True,
                 )
+            except WebSocketDisconnect:
+                pass
             except Exception as e:
-                logger.error(f"Error in message handling: {e}")
+                logger.error(f"Error in WebSocket handler: {e}")
+            finally:
+                if ws.client_state == WebSocketState.CONNECTED:
+                    await ws.close()
+                for task in tasks:
+                    task.cancel()
+                await live_agent._session.close()
 
     except asyncio.TimeoutError:
         logger.warning("WebSocket connection timeout")
@@ -436,21 +288,11 @@ async def websocket_endpoint(ws: WebSocket):
         # Cleanup
         if message_handler:
             message_handler.is_connected = False
->>>>>>> Liveapi-agent
         try:
-            await asyncio.gather(
-                *tasks,
-            )
-        except WebSocketDisconnect:
-            pass
-        except Exception as e:
-            logger.error(f"Error in WebSocket handler: {e}")
-        finally:
             if ws.client_state == WebSocketState.CONNECTED:
                 await ws.close()
-            for task in tasks:
-                task.cancel()
-            await live_agent._session.close()
+        except Exception as e:
+            logger.error(f"Error closing WebSocket: {e}")
 
 
 @app.get("/invalidate-cache")
@@ -462,12 +304,8 @@ def invalidate_cache():
 
 if __name__ == "__main__":
     import uvicorn
-<<<<<<< HEAD
-
-=======
     
     # Warm up cache
->>>>>>> Liveapi-agent
     units = units_fetcher.fetch_units_from_api("flamant")
     if units:
         logger.info(f"Fetched {len(units)} units from API.")
