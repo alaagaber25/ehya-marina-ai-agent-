@@ -1,15 +1,11 @@
-import logging
 import os
-
+import logging
 from dotenv import load_dotenv
-
-logger = logging.getLogger(__name__)
 
 load_dotenv()
 
-REDIS_URL = os.getenv("REDIS_URL", "")
-if not REDIS_URL:
-    raise ValueError("ERROR: REDIS_URL not found in .env file")
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 ENABLE_RATE_LIMIT = os.getenv("ENABLE_RATE_LIMIT", "")
 if not ENABLE_RATE_LIMIT:
@@ -17,10 +13,13 @@ if not ENABLE_RATE_LIMIT:
         "WARNING: ENABLE_RATE_LIMIT not found in .env file - rate limit disabled"
     )
 
-
 DATABASE_URL = os.getenv("DATABASE_URL", "")
 if not DATABASE_URL:
     raise ValueError("ERROR: DATABASE_URL not found in .env file")
+
+REDIS_URL = os.getenv("REDIS_URL", "")
+if not REDIS_URL:
+    raise ValueError("ERROR: REDIS_URL not found in .env file")
 
 # --- Google Gemini ---
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", "")
@@ -31,7 +30,7 @@ GOOGLE_LiveAPI_KEY = os.getenv("GOOGLE_LiveAPI_KEY", "")
 if not GOOGLE_LiveAPI_KEY:
     raise ValueError("ERROR: GOOGLE_LiveAPI_KEY not found in .env file")
 
-LIVEAPI_MODEL = os.getenv("LIVEAPI_MODEL")
+LIVEAPI_MODEL= os.getenv("LIVEAPI_MODEL")
 if not LIVEAPI_MODEL:
     raise ValueError("ERROR: LIVEAPI_MODEL not found in .env file")
 
