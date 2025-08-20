@@ -9,7 +9,10 @@ from tools.units_fetcher import fetch_units_from_api
 logging.basicConfig(level=logging.INFO)
 
 
+<<<<<<< HEAD
 @tool
+=======
+>>>>>>> Liveapi-agent
 def get_project_units(
     project_id: str,
     unit_code: Optional[str] = None,
@@ -29,6 +32,10 @@ def get_project_units(
     price_tolerance: Optional[float] = 0.05,
     area_tolerance: Optional[float] = 0.05,
     pick_random: Optional[bool] = False,
+<<<<<<< HEAD
+=======
+     **kwargs
+>>>>>>> Liveapi-agent
 ) -> List[Dict[str, Any]]:
     """
     Retrieves project units from a cached source (backed by `fetch_units_from_api("<project_id>")`).

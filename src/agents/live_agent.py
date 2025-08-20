@@ -3,6 +3,7 @@ from collections.abc import AsyncGenerator, Callable
 from dataclasses import dataclass
 from enum import StrEnum, auto
 from typing import Any, Literal, NotRequired, TypedDict
+import json
 
 from google import genai
 from google.genai.types import (
@@ -29,7 +30,6 @@ class LiveAgentConfig(TypedDict):
     MODEL: str
     SYSTEM_PROMPT: str
     ENABLE_TRANSCRIPTION: bool
-    # Add VAD configuration options
     VAD_START_SENSITIVITY: NotRequired[Literal["low"] | Literal["high"]]
     VAD_END_SENSITIVITY: NotRequired[Literal["low"] | Literal["high"]]
     VAD_SILENCE_DURATION_MS: NotRequired[int]
@@ -43,8 +43,8 @@ class MessageType(StrEnum):
     TOOL_CALL = auto()
     INPUT_TRANSCRIPTION = auto()
     OUTPUT_TRANSCRIPTION = auto()
-    INTERRUPTION = auto()  # Add interruption message type
-    TOOL_CALL_CANCELLED = auto()  # Add tool call cancellation
+    INTERRUPTION = auto()
+    TOOL_CALL_CANCELLED = auto()
     TOOL_CALL_RESPONSE = auto()
 
 
@@ -66,12 +66,15 @@ class LiveAgent:
         voice_name = config.get("VOICE_NAME")
         if not voice_name:
             logger.warning("VOICE_NAME not specified in config, using default voice.")
+<<<<<<< HEAD
+=======
+            
+>>>>>>> Liveapi-agent
         self.__live_config = LiveConnectConfig(
             response_modalities=[Modality.AUDIO],
             speech_config=SpeechConfig(
                 voice_config=VoiceConfig(
                     prebuilt_voice_config=PrebuiltVoiceConfig(
-                        # You can specify a voice name here if needed
                         voice_name=voice_name
                     )
                 ),
@@ -82,17 +85,15 @@ class LiveAgent:
             ),
             input_audio_transcription=audio_transcription_config,
             output_audio_transcription=audio_transcription_config,
-            realtime_input_config=realtime_input_config,  # type: ignore
+            realtime_input_config=realtime_input_config,
         )
 
         self.__model = config.get("MODEL")
         self.__functions_to_call = {tool.__name__: tool for tool in tools}
-        self._interrupted_tool_calls = set()  # Track interrupted tool calls
+        self._interrupted_tool_calls = set()
 
     @staticmethod
-    def __get_transcroption_config(
-        config: LiveAgentConfig,
-    ):
+    def __get_transcroption_config(config: LiveAgentConfig):
         if config.get("ENABLE_TRANSCRIPTION"):
             return AudioTranscriptionConfig()
         return None
@@ -102,7 +103,6 @@ class LiveAgent:
         """Configure VAD settings for better interruption handling"""
         vad_config: RealtimeInputConfigOrDict = {}
 
-        # Map string values to enum values
         start_sensitivity_map = {
             "low": StartSensitivity.START_SENSITIVITY_LOW,
             "high": StartSensitivity.START_SENSITIVITY_HIGH,
@@ -153,7 +153,7 @@ class LiveAgent:
         """Send text message with turn completion"""
         await self._session.send_client_content(
             turns=Content(role="user", parts=[Part(text=text)]),
-            turn_complete=True,  # Explicitly mark turn as complete
+            turn_complete=True,
         )
 
     async def send_audio(self, audio: bytes):
@@ -166,8 +166,20 @@ class LiveAgent:
         """Signal end of audio stream (important for VAD)"""
         await self._session.send_realtime_input(audio_stream_end=True)
 
+    def _create_error_response(self, error_msg: str, tool_name: str) -> dict:
+        """Create standardized error response for tool failures"""
+        return {
+            "action": "finalize_response",
+            "action_input": {
+                "action": "answer",
+                "action_data": None,
+                "responseText": f"I encountered an issue while processing your request. Please try again or contact support if the problem persists."
+            }
+        }
+
     async def receive_message(self) -> AsyncGenerator[AgentMessage, None]:
-        """Improved message receiving with proper interruption handling"""
+        """Improved message receiving with proper interruption and error handling"""
+        
         async for message in self._session.receive():
             # Handle server-side interruptions
             if message.server_content and message.server_content.interrupted:
@@ -212,15 +224,18 @@ class LiveAgent:
             if message.text:
                 yield AgentMessage(type=MessageType.TEXT, data=message.text)
 
-            # Handle tool calls
+            # Handle tool calls with improved error handling
             if message.tool_call and message.tool_call.function_calls:
                 function_responses: list[FunctionResponse] = []
+                
                 for fc in message.tool_call.function_calls:
                     # Skip if this tool call was already cancelled
                     if fc.id in self._interrupted_tool_calls:
+                        logger.info(f"Skipping cancelled tool call: {fc.id}")
                         continue
 
                     if fc.name in self.__functions_to_call:
+<<<<<<< HEAD
                         if fc.args is None:
                             fc.args = {}
                         if "dialect" not in fc.args:
@@ -243,22 +258,89 @@ class LiveAgent:
                                 ]
                             )
                             logging.info(f"\n\nresponse: {response}\n\n")
+=======
+                        try:
+                            # Prepare arguments
+                            if fc.args is None:
+                                fc.args = {}
+                            
+                            # Add dialect info if not present
+                            if 'dialect' not in fc.args and self.__dialect:
+                                fc.args['dialect'] = self.__dialect
+                            if 'original_dialect' not in fc.args and self.__dialect:
+                                fc.args['original_dialect'] = self.__dialect
+>>>>>>> Liveapi-agent
 
+                            logger.info(f"Calling tool: {fc.name} with args: {fc.args}")
+                            
+                            # Execute tool
+                            tool_output = self.__functions_to_call[fc.name](**fc.args)
+                            
+                            # Standardize tool output
+                            if isinstance(tool_output, dict):
+                                response_payload = tool_output
+                            else:
+                                response_payload = {"result": tool_output}
+
+                            # Create function response
                             function_response = FunctionResponse(
-                                name=fc.name, response=response, id=fc.id
+                                name=fc.name, 
+                                response=response_payload, 
+                                id=fc.id
                             )
+
+                            # Yield to client
                             yield AgentMessage(
                                 type=MessageType.TOOL_CALL_RESPONSE,
-                                data=response,
+                                data=response_payload,
                             )
+
                             function_responses.append(function_response)
+                            logger.info(f"Tool {fc.name} executed successfully")
+
                         except Exception as e:
                             logger.error(f"Tool call {fc.name} failed: {e}")
+                            
+                            # Create error response
+                            error_response = self._create_error_response(str(e), fc.name)
+                            
+                            function_response = FunctionResponse(
+                                name=fc.name, 
+                                response=error_response, 
+                                id=fc.id
+                            )
 
+                            yield AgentMessage(
+                                type=MessageType.TOOL_CALL_RESPONSE,
+                                data=error_response,
+                            )
+
+                            function_responses.append(function_response)
+                    else:
+                        logger.warning(f"Unknown tool called: {fc.name}")
+                        
+                        # Handle unknown tool
+                        error_response = self._create_error_response(
+                            f"Unknown tool: {fc.name}", fc.name
+                        )
+                        
+                        function_response = FunctionResponse(
+                            name=fc.name, 
+                            response=error_response, 
+                            id=fc.id
+                        )
+                        
+                        function_responses.append(function_response)
+
+                # Send all function responses back to the model
                 if function_responses:
-                    await self._session.send_tool_response(
-                        function_responses=function_responses
-                    )
+                    try:
+                        await self._session.send_tool_response(
+                            function_responses=function_responses
+                        )
+                        logger.info(f"Sent {len(function_responses)} tool responses")
+                    except Exception as e:
+                        logger.error(f"Failed to send tool responses: {e}")
 
             # Handle tool call cancellations
             if message.tool_call_cancellation and message.tool_call_cancellation.ids:

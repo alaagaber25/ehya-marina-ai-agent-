@@ -12,8 +12,7 @@ LEADS_FILE_PATH = os.path.relpath(
 )
 
 
-@tool
-def save_lead(name: str, phone: str, unit_code: str, notes: str) -> str:
+def save_lead(name: str, phone: str, unit_code: str, notes: str, **kwargs) -> str:
     """
     Saves the information of an interested user (lead) for follow-up by a sales agent.
 
