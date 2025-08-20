@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 async def lifespan(_: FastAPI):
     """Application lifespan management - database initialization removed"""
     logger.info("Application starting up...")
-    if getattr(config, "ENABLE_RATE_LIMIT", True):
+    if getattr(config, "ENABLE_RATE_LIMIT", False):
         redis_connection = redis.from_url(
             config.REDIS_URL, encoding="utf-8", decode_responses=True
         )
@@ -50,7 +50,7 @@ class ClientData(BaseModel):
 
 
 websocket_dependencies = []
-if getattr(config, "ENABLE_RATE_LIMIT", True):
+if getattr(config, "ENABLE_RATE_LIMIT", False):
     # Google's session limit is 15 minutes, so we only limit the ip to make at most 3 requests in this window
     websocket_dependencies.append(Depends(WebSocketRateLimiter(times=3, minutes=15)))
 
