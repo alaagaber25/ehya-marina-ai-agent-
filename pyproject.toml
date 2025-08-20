@@ -28,6 +28,8 @@ dependencies = [
     # "asyncpg>=0.30.0",
     "fastapi-limiter>=0.1.6",
     "aioredis>=2.0.1",
+    "redis>=5.0.0",
+    "aioredis>=2.0.1",
 ]
 
 [project.optional-dependencies]
