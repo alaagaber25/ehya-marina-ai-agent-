@@ -5,8 +5,11 @@ import logging
 from contextlib import asynccontextmanager
 from datetime import datetime
 
-from fastapi import FastAPI, WebSocket
+import redis.asyncio as redis
+from fastapi import Depends, FastAPI, WebSocket
 from fastapi.websockets import WebSocketDisconnect, WebSocketState
+from fastapi_limiter import FastAPILimiter
+from fastapi_limiter.depends import WebSocketRateLimiter
 from pydantic import BaseModel, Field
 
 import config as config
@@ -26,6 +29,10 @@ logger = logging.getLogger(__name__)
 async def lifespan(_: FastAPI):
     """Application lifespan management - database initialization removed"""
     logger.info("Application starting up...")
+    redis_connection = redis.from_url(
+        config.REDIS_URL, encoding="utf-8", decode_responses=True
+    )
+    await FastAPILimiter.init(redis_connection)
     yield
     logger.info("Application shutting down...")
 
@@ -41,7 +48,8 @@ class ClientData(BaseModel):
     audio_stream_end: bool = Field(default=False)
 
 
-@app.websocket("/ws")
+# Google's session limit is 15 minutes, so we only limit the ip to make at most 3 requests in this window
+@app.websocket("/ws", dependencies=[Depends(WebSocketRateLimiter(times=3, minutes=15))])
 async def websocket_endpoint(ws: WebSocket):
     """
     Main WebSocket endpoint for voice communication.

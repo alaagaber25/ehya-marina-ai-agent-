@@ -4,6 +4,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+REDIS_URL = os.getenv("REDIS_URL", "")
+if not REDIS_URL:
+    raise ValueError("ERROR: REDIS_URL not found in .env file")
+
 DATABASE_URL = os.getenv("DATABASE_URL", "")
 if not DATABASE_URL:
     raise ValueError("ERROR: DATABASE_URL not found in .env file")
