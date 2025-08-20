@@ -215,16 +215,16 @@ async def websocket_endpoint(ws: WebSocket):
             async def send_messages():
                 """Handle outgoing messages from Live API to client"""
                 try:
-                    # Send initial connection confirmation
-                    await message_handler.send_json_streaming({"type": "connected", "data": {"session_id": session_id}})
-                    
+                    # Send initial connection confirmation - FIXED
+                    await message_handler.send_json_streaming("connected", {"session_id": session_id})
+        
                     # Get message handlers
                     handlers = message_handler.get_message_handlers()
 
                     while ws.client_state in [
-                WebSocketState.CONNECTED,
-                WebSocketState.CONNECTING,
-            ]:
+                        WebSocketState.CONNECTED,
+                        WebSocketState.CONNECTING,
+                    ]:
                         try:
                             # Process messages with timeout
                             async for message in live_agent.receive_message():
