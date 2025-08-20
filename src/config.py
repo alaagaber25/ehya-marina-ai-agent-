@@ -1,12 +1,22 @@
+import logging
 import os
 
 from dotenv import load_dotenv
+
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 
 REDIS_URL = os.getenv("REDIS_URL", "")
 if not REDIS_URL:
     raise ValueError("ERROR: REDIS_URL not found in .env file")
+
+ENABLE_RATE_LIMIT = os.getenv("ENABLE_RATE_LIMIT", "")
+if not ENABLE_RATE_LIMIT:
+    logger.warning(
+        "WARNING: ENABLE_RATE_LIMIT not found in .env file - rate limit disabled"
+    )
+
 
 DATABASE_URL = os.getenv("DATABASE_URL", "")
 if not DATABASE_URL:

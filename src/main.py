@@ -29,10 +29,11 @@ logger = logging.getLogger(__name__)
 async def lifespan(_: FastAPI):
     """Application lifespan management - database initialization removed"""
     logger.info("Application starting up...")
-    redis_connection = redis.from_url(
-        config.REDIS_URL, encoding="utf-8", decode_responses=True
-    )
-    await FastAPILimiter.init(redis_connection)
+    if getattr(config, "ENABLE_RATE_LIMIT", True):
+        redis_connection = redis.from_url(
+            config.REDIS_URL, encoding="utf-8", decode_responses=True
+        )
+        await FastAPILimiter.init(redis_connection)
     yield
     logger.info("Application shutting down...")
 
@@ -48,8 +49,13 @@ class ClientData(BaseModel):
     audio_stream_end: bool = Field(default=False)
 
 
-# Google's session limit is 15 minutes, so we only limit the ip to make at most 3 requests in this window
-@app.websocket("/ws", dependencies=[Depends(WebSocketRateLimiter(times=3, minutes=15))])
+websocket_dependencies = []
+if getattr(config, "ENABLE_RATE_LIMIT", True):
+    # Google's session limit is 15 minutes, so we only limit the ip to make at most 3 requests in this window
+    websocket_dependencies.append(Depends(WebSocketRateLimiter(times=3, minutes=15)))
+
+
+@app.websocket("/ws", dependencies=websocket_dependencies)
 async def websocket_endpoint(ws: WebSocket):
     """
     Main WebSocket endpoint for voice communication.
