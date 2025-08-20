@@ -1,0 +1,31 @@
+# Virtual environments
+venv/
+env/
+agent_venv/
+
+# Environment variables
+.env
+
+# Python artifacts
+__pycache__/
+*.pyc
+*.pyo
+
+# IDE/editor configs
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+
+New folder/
+audio_outputs/
+drafts/
+voom-n8n-automation-873a83594a0d.json
+voomi_agent.egg-info
+data/
