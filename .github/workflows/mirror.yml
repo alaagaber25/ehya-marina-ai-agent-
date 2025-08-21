@@ -3,7 +3,7 @@ name: Mirror to GitLab
 on:
   push:
     branches:
-      - main   
+      - main
 
 jobs:
   mirror:
@@ -19,5 +19,5 @@ jobs:
           git config --global user.name "Alaa Gaber"
 
           git remote add gitlab https://oauth2:${{ secrets.GITLAB_TOKEN }}@gitlab.com/alaagaber25/voomi-ai-agent.git
-          git push gitlab --all
-          git push gitlab --tags
+          git push gitlab --all --force
+          git push gitlab --tags --force
