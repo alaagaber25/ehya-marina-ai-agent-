@@ -3,7 +3,6 @@
 env/
 agent_venv/
 build/
-
 # Environment variables
 .env
 
@@ -30,3 +29,5 @@ drafts/
 voom-n8n-automation-873a83594a0d.json
 voomi_agent.egg-info
 data/
+
+**/draft.py
