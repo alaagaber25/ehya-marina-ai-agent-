@@ -1,0 +1,8 @@
+- name: Push to GitLab
+  run: |
+    git config --global user.email "alaasilva25@gmail.com"
+    git config --global user.name "Alaa Gaber"
+
+    git remote add gitlab https://oauth2:${{ secrets.GITLAB_TOKEN }}@gitlab.com/alaagaber25/voomi-ai-agent.git
+    git push gitlab --all
+    git push gitlab --tags
