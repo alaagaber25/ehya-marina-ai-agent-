@@ -72,20 +72,10 @@ async def websocket_endpoint(ws: WebSocket):
     dialect = parsed_data.get("data", {}).get("dialect")
     agent_gender = parsed_data.get("data", {}).get("persona")
     agent_name = parsed_data.get("data", {}).get("name")
+    language = parsed_data.get("data", {}).get("language")
     voice_name = (config.FEMALE_VOICE_NAME if agent_gender == "female" else config.MALE_VOICE_NAME)
 
-    # Map dialect to language code
-    language_map = {
-        "EGYPTIAN": "ar-EG",
-        "SAUDI": "ar-SA",
-        "ENGLISH": "en-US",
-        "FRENCH": "fr-FR",
-        "SPANISH": "es-ES",
-    }
-    languages_skills = ["English", "Egyptian Arabic", "Saudi Arabic"]
-    language_code = language_map.get(dialect)
-
-    logger.info(f"WebSocket connected - Dialect: {dialect}, Agent Name: {agent_name}, Agent Gender: {agent_gender}, Voice: {voice_name}")
+    logger.info(f"WebSocket connected - Dialect: {dialect}, Agent Name: {agent_name}, Agent Gender: {agent_gender}, Voice: {voice_name}, Language: {language}")
 
     # Initialize agent and session
     session_id = f"session_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
@@ -143,11 +133,10 @@ async def websocket_endpoint(ws: WebSocket):
                     agent_name=agent_name,
                     agent_gender=agent_gender,
                     dialect=dialect,
-                    languages_skills=languages_skills
+                    language=language
                 ),
                 "VOICE_NAME": voice_name,
                 "DIALECT": dialect,
-                "LANGUAGE_CODE": language_code,
                 # Improved VAD settings for better interruption handling
                 "VAD_START_SENSITIVITY": "high",
                 "VAD_END_SENSITIVITY": "low", 
