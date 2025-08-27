@@ -3,109 +3,320 @@
 # 1. Project Knowledge Base
 # ------------------------------------------------------------------
 
-FLAMANT_PROJECT_DESCRIPTION = {
-    "title": "Flamant – Live at the Heart of Al Khobar",
-    "tagline": "Luxury, connection, and comfort—every day.",
-    "sections": [
-        {
-            "heading": "🏙 Prime Location",
-            "bullets": [
-                "Minutes from the city's best.",
-                "Culture & Learning: KFUPM, King Abdulaziz Center for World Culture – Ithra.",
-                "Family & Discovery: Sci-Tech Technology Center.",
-                "Shopping & Lifestyle: Al Rashid Mall.",
-                "Sea & Leisure: Al Khobar Corniche."
-            ]
-        },
-        {
-            "heading": "🏢 Architectural Elegance",
-            "bullets": [
-                "First premium residential concept of its kind in KSA.",
-                "Unified, nature-meets-urban design across 4-storey buildings.",
-                "Spacious units with private balconies, covered parking, and a guard suite.",
-                "Distinctive interior & exterior finishes with meticulous attention to detail."
-            ]
-        },
-        {
-            "heading": "🌟 Resort-Style Amenities (5★)",
-            "bullets": [
-                "Health & wellness centers (men and women).",
-                "Co-working spaces.",
-                "Children's play area.",
-                "Multipurpose lounge & VIP hall.",
-                "Indoor garden & dedicated BBQ area.",
-                "50m infinity pool.",
-                "Cinema.",
-                "Housekeeping services.",
-                "24/7 security."
-            ]
-        },
-        {
-            "heading": "🏠 Apartment Types",
-            "bullets": [
-                "1 Bedroom",
-                "2 Bedrooms",
-                "2.5 Bedrooms",
-                "3.5 Bedrooms"
-            ]
-        }
+EHYA_MARINA_PROJECT_DESCRIPTION = {
+    "description": [
+        "Located in the vibrant Al Fanar district of Dammam, the Ehya Marina Villas project places you right next to key landmarks and essential services. This isn't just a place to live; it's a place to thrive, with a focus on seamless, modern living.",
+        "We offer four unique and thoughtfully designed villa layouts, each crafted with a modern architectural style to suit different lifestyles. Every home is fully integrated with smart home systems, giving you effortless control over your environment for a more comfortable and convenient experience.",
+        "The design of Ehya Marina maximizes your quality of life through the intelligent use of space. Our villas feature spacious outdoor courtyards and open-plan living areas that create a harmonious, expansive feel."
     ],
-    "closing": "Flamant isn't just a home—it's a daily experience of luxury and ease at Al Khobar's most desirable address."
+    "closing": "Ehya Marina is more than just a home—it's a daily experience of luxury and ease at Al Khobar's most desirable address."
 }
 
 Locations_List = [
-    "King Abdulaziz Center for World Culture",
-    "King Fahd University of Petroleum and Minerals (KFUPM)",
-    "Al Rashid Mall",
-    "King Fahd Causeway",
-    "Half Moon Beach",
-    "SciTech Technology Center",
-    "Khobar Corniche",
-    "King Fahd Road",
-    "Saudi German Hospital",
-    "King Fahd International Airport"
+"King Fahd International Airport",
+"King Abdul Aziz Seaport",
+"Imam Abdulrahman Bin Faisal University",
+"Dhahran Expo",
+"Corniche Al Rakah",
+"Sports City",
+"Pavilion Al Khobar",
+"King Fahd University (KFUPM)",
+"Ithra City",
+"Saudi Aramco",
+"Cenomi Dhahran Mall",
+"Avenue Al Khobar",
+"The Khobar Water Tower",
+"Al Rashid Mall",
+"The Khobar Sea Front",
+"Prince Turki Street",
+"Ajdan Walk",
+"The King Fahd Causeway"
 ]
 
-
 Locations_Descriptions = {
-    "King Abdulaziz Center for World Culture": "A world-class hub that brings together art exhibitions, theaters, a library, and innovation labs, offering visitors a rich and inspiring learning experience. Located 15.2 km away, about 22 minutes by car.",
-    
-    "King Fahd University of Petroleum and Minerals (KFUPM)": "Situated in Dhahran, KFUPM is one of the region’s leading institutions for engineering, science, and business education. Only 8.5 km away, with a travel time of approximately 14 minutes.",
-    
-    "Al Rashid Mall": "One of the largest shopping centers in Khobar, featuring a wide range of international brands, restaurants, and entertainment options. Conveniently located 6.5 km away, about 10 minutes by car.",
-    
-    "King Fahd Causeway": "An iconic bridge linking Saudi Arabia and Bahrain, playing a vital role in enhancing travel and trade between the two nations. It lies 38.4 km away, around 38 minutes by car.",
-    
-    "Half Moon Beach": "A crescent-shaped stretch of coastline with soft sands and calm waters, perfect for swimming, picnicking, and water sports. The beach is 41.6 km away, with an average drive of 34 minutes.",
-    
-    "SciTech Technology Center": "An interactive science and technology center with engaging exhibits, hands-on activities, and a planetarium, making it perfect for families and students. Located 6.7 km away, about 12 minutes by car.",
-    
-    "Khobar Corniche": "A scenic waterfront promenade along the Arabian Gulf, offering breathtaking sea views, family spaces, and a relaxing atmosphere. Just 6.4 km away, reachable within 11 minutes.",
-    
-    "King Fahd Road": "A major route connecting key commercial and residential zones in the city, ensuring smooth accessibility to important destinations. It stretches about 34 km, taking roughly 33 minutes to travel.",
-    
-    "Saudi German Hospital": "A state-of-the-art medical facility offering world-class healthcare services supported by advanced technology and expert professionals. It is 34 km away, about 33 minutes by car.",
-    
-    "King Fahd International Airport": "Located in Dammam, this airport is one of the largest in the world by land area, covering around 780 square kilometers. It lies 54.2 km away, with an average travel time of 42 minutes."
+  "locations": [
+    {
+      "name": "King Fahd International Airport",
+      "description": "King Fahd International Airport, located in Dammam, Saudi Arabia, is one of the largest airports globally by land area, covering approximately 780 square kilometers. It is 30 km away and takes around 33 minutes to reach."
+    },
+    {
+      "name": "King Abdul Aziz Seaport",
+      "description": "King Abdul Aziz Seaport, located in Jeddah, Saudi Arabia, is one of the busiest ports in the Middle East. It handles a significant portion of the Kingdom's import and export activities. It is 11 km away and takes around 9 minutes to reach."
+    },
+    {
+      "name": "Imam Abdulrahman Bin Faisal University",
+      "description": "Imam Abdulrahman Bin Faisal University, located in Dammam, Saudi Arabia, is a leading academic institution offering diverse undergraduate and postgraduate programs. It is 4.5 km away and takes around 5 minutes to reach."
+    },
+    {
+      "name": "Dhahran Expo",
+      "description": "Dhahran Expo is a premier event venue located in Dhahran, Saudi Arabia. It hosts a variety of exhibitions, conferences, and events across multiple industries. It is 6 km away and takes around 5 minutes to reach."
+    },
+    {
+      "name": "Corniche Al Rakah",
+      "description": "Corniche Al Rakah, located in Al Khobar, Saudi Arabia, is a picturesque waterfront area known for its serene atmosphere and stunning views of the Arabian Gulf. It is 9 km away and takes around 8 minutes to reach."
+    },
+    {
+      "name": "Sports City",
+      "description": "Sports City is a large sports complex typically featuring stadiums, arenas, and other sports facilities. It serves as a hub for various sporting events, including football, athletics, and other international competitions. It is 6 km away and takes around 5 minutes to reach."
+    },
+    {
+      "name": "Pavilion Al Khobar",
+      "description": "Pavilion Al Khobar is a premier shopping mall located in Al Khobar, Saudi Arabia. It features a mix of international and local brands, offering a variety of retail, dining, and entertainment options. It is 6.5 km away and takes around 5 minutes to reach."
+    },
+    {
+      "name": "King Fahd University (KFUPM)",
+      "description": "King Fahd University of Petroleum and Minerals (KFUPM), located in Dhahran, Saudi Arabia, is a leading institution for engineering, science, and business education. It is 20 km away and takes around 18 minutes to reach."
+    },
+    {
+      "name": "Ithra City",
+      "description": "Ithra City, located in Dhahran, Saudi Arabia, is a major cultural and entertainment hub. It is 19 km away and takes around 17 minutes to reach."
+    },
+    {
+      "name": "Saudi Aramco",
+      "description": "Saudi Aramco is the world's largest oil company, headquartered in Dhahran, Saudi Arabia. It is 15 km away and takes around 10 minutes to reach."
+    },
+    {
+      "name": "Cenomi Dhahran Mall",
+      "description": "Cenomi Dhahran Mall, located in Dhahran, Saudi Arabia, is one of the largest shopping destinations in the Eastern Province. It offers a variety of international and local retail stores. It is 13 km away and takes around 10 minutes to reach."
+    },
+    {
+      "name": "Avenue Al Khobar",
+      "description": "Avenue Al Khobar is a popular shopping and entertainment destination located in Al Khobar, Saudi Arabia. It is 13 km away and takes around 10 minutes to reach."
+    },
+    {
+      "name": "The Khobar Water Tower",
+      "description": "The Khobar Water Tower is a prominent landmark in Al Khobar, Saudi Arabia. Standing at 90 meters, it offers panoramic views of the city and the Arabian Gulf. It is 13 km away and takes around 10 minutes to reach."
+    },
+    {
+      "name": "Al Rashid Mall",
+      "description": "Al Rashid Mall, located in Al Khobar, Saudi Arabia, is one of the largest shopping malls in the Eastern Province. It is 15 km away and takes around 12 minutes to reach."
+    },
+    {
+      "name": "The Khobar Sea Front",
+      "description": "The Khobar Sea Front, located in Khobar, Saudi Arabia, is a popular waterfront destination offering scenic views of the Arabian Gulf. It is 15 km away and takes around 12 minutes to reach."
+    },
+    {
+      "name": "Prince Turki Street",
+      "description": "Prince Turki Street, located in Al Khobar, Saudi Arabia, is a vibrant waterfront destination known for its stunning sea views and lively atmosphere. It is 15 km away and takes around 12 minutes to reach."
+    },
+    {
+      "name": "Ajdan Walk",
+      "description": "Ajdan Walk, located in Al Khobar, Saudi Arabia, is a premium waterfront destination offering a blend of luxury dining, shopping, and entertainment experiences. It is 15 km away and takes around 12 minutes to reach."
+    },
+    {
+      "name": "The King Fahd Causeway",
+      "description": "The King Fahd Causeway is a bridge connecting Saudi Arabia and Bahrain, spanning approximately 25 kilometers. It is 30 km away and takes around 33 minutes to reach."
+    }
+  ]
 }
 
-Unit_ONE_Description = """
-A stylish 1-Bedroom residence in the heart of the Flamant project, featuring a modern design and overlooking lush green landscapes — perfect for those who value elegance and comfort.
-"""
 
-Unit_TWO_Description = """
-A luxurious 2-Bedroom home with breathtaking panoramic views of Al Khobar's skyline, combining refined interiors with an unmatched city-living experience.
-"""
 
-Unit_TWO_HALF_Description = """
-An exceptional 2-Bedroom apartment, ideal for small families seeking extra space, offering elegant finishes, smart layout, and serene views.
-"""
+VILLA_FOG_A_Description = {
+  "villa_name": "Fog Villa A",
+  "land_area_sqm": 380.19,
+  "building_area_sqm": 375.71,
+  "floors": [
+    {
+      "floor_name": "Ground Floor",
+      "features": [
+        "Car garage",
+        "Entrance courtyard",
+        "Outdoor courtyard",
+        "Majlis (Reception area)",
+        "Guest toilet",
+        "Laundry room",
+        "Kitchen",
+        "Dining table",
+        "Living room",
+        "Outdoor courtyard",
+        "Maid's room",
+        "Maid's bathroom"
+      ]
+    },
+    {
+      "floor_name": "First Floor",
+      "features": [
+        "Hallway",
+        "Master bedroom",
+        "Master bathroom",
+        "Balcony",
+        "Living room",
+        "Bathroom",
+        "Bedroom",
+        "Bathroom",
+        "Bedroom",
+        "Bathroom",
+        "Bedroom",
+        "Bathroom"
+      ]
+    }
+  ]
+}
+Villa_Scarf_B_Description = {
+  "villa_name": "Scarf Villa B",
+  "land_area_sqm": 380.57,
+  "building_area_sqm": 363.89,
+  "floors": [
+    {
+      "floor_name": "Ground Floor",
+      "features": [
+        "Car garage",
+        "Entrance courtyard",
+        "Outdoor courtyard",
+        "Majlis (Reception area)",
+        "Guest toilet",
+        "Kitchen",
+        "Hallway",
+        "Dining table",
+        "Living room"
+      ]
+    },
+    {
+      "floor_name": "First Floor",
+      "features": [
+        "Hallway",
+        "Laundry room",
+        "Master bathroom",
+        "Master bedroom",
+        "Balcony",
+        "Bedroom",
+        "Bathroom",
+        "Bedroom",
+        "Bathroom",
+        "Bedroom",
+        "Bathroom",
+        "Maid's room",
+        "Maid's bathroom"
+      ]
+    }
+  ]
+}
 
-Unit_THREE_HALF_Description = """
-A spacious 3.5-Bedroom residence with dual views, perfectly designed for large families, blending sophistication, comfort, and vibrant living.
-"""
+VILLA_Crystal_C_Description = {
+  "villa_name": "Crystal Villa C",
+  "land_area_sqm": 374.93,
+  "building_area_sqm": 406.61,
+  "floors": [
+    {
+      "floor_name": "Ground Floor",
+      "features": [
+        "Entrance",
+        "Majlis (Reception area)",
+        "Guest toilet",
+        "Car garage",
+        "Outdoor courtyard",
+        "Dining table",
+        "Living room",
+        "Bathroom",
+        "Kitchen",
+        "Maid's room",
+        "Maid's bathroom",
+        "Outdoor courtyard"
+      ]
+    },
+    {
+      "floor_name": "First Floor",
+      "features": [
+        "Hallway",
+        "Master bedroom",
+        "Master bathroom",
+        "Balcony",
+        "Bedroom",
+        "Bathroom",
+        "Bedroom",
+        "Bathroom",
+        "Bedroom"
+      ]
+    }
+  ]
+}
 
-BUILDING_DESCRIPTION = "We have a total of 4 buildings, each designed with a unique architectural style and offering a range of luxurious apartments."
+VILLA_Rock_D_Description = {
+  "villa_name": "Rock Villa D",
+  "land_area_sqm": 339.12,
+  "building_area_sqm": 313.19,
+  "floors": [
+    {
+      "floor_name": "Ground Floor",
+      "features": [
+        "Car parking",
+        "Outdoor courtyard",
+        "Dining table",
+        "Living room",
+        "Guest toilet",
+        "Kitchen",
+        "Maid's room",
+        "Maid's bathroom",
+        "Outdoor courtyard"
+      ]
+    },
+    {
+      "floor_name": "First Floor",
+      "features": [
+        "Hallway",
+        "Master bedroom",
+        "Master bathroom",
+        "Balcony",
+        "Bathroom",
+        "Bedroom",
+        "Bathroom",
+        "Bedroom",
+        "Balcony"
+      ]
+    }
+  ]
+}
+
+VILLA_Valley_E_Description = {
+  "villa_name": "Valley Villa E",
+  "land_area_sqm": 352.69,
+  "building_area_sqm": 363.62,
+  "floors": [
+    {
+      "floor_name": "Ground Floor",
+      "features": [
+        "Car parking",
+        "Outdoor courtyard",
+        "Living room",
+        "Dining table",
+        "Kitchen",
+        "Majlis (Reception area)",
+        "Distributor",
+        "Guest toilet",
+        "Maid's room",
+        "Maid's bathroom",
+        "Outdoor courtyard"
+      ]
+    },
+    {
+      "floor_name": "First Floor",
+      "features": [
+        "Distributor",
+        "Master bedroom",
+        "Master bathroom",
+        "Bedroom",
+        "Bathroom",
+        "Bedroom",
+        "Bathroom",
+        "Bedroom",
+        "Bathroom"
+      ]
+    }
+  ]
+}
+
+BUILDING_DESCRIPTION = {
+    "overview": "The Ehya Marina Villas Master Plan showcases a modern, well-organized residential community designed for comfort, convenience, and lifestyle excellence.",
+    "features": {
+      "layout_and_accessibility": "The villas are arranged in neat rows along wide streets with easy access to main roads, ensuring smooth traffic flow and privacy for residents. The project includes a balanced mix of corner plots and central plots.",
+      "residential_units": "Each villa is color-coded to highlight different architectural models and layouts, offering diversity across the community. Units cater to various lifestyles, from spacious family homes to compact villas.",
+      "community_landmark": "A beautifully designed mosque is located at the heart of the plan, serving as a spiritual and communal anchor easily accessible to all residents.",
+      "greenery_and_open_spaces": "The community is enhanced by landscaped streets and tree-lined pathways, promoting natural beauty and a healthier living environment.",
+      "modern_features": "The master plan integrates smart urban design, ensuring harmony between outdoor spaces, building orientations, and community facilities."
+    },
+    "vision": "This master plan reflects architectural elegance and a lifestyle vision where comfort, connectivity, and community meet."
+  }
 
 Tour_Locations = [
     'Entrance',
@@ -132,11 +343,26 @@ The design blends open green spaces, shaded walkways, and inviting leisure areas
 Conveniently located along main roads, the project ensures easy access to nearby amenities, while private entrances and well-planned parking add to residents' comfort and security.
 """
 
-PROJECT_FEATURES = """
-Imagine living in the heart of Al Khobar, in a location that blends luxury with modern city life—just minutes away from the city's most iconic landmarks: Corniche Al Rakah, the King Abdulaziz Center for World Culture, King Fahd University of Petroleum and Minerals, and major shopping destinations like Al Rashid Mall.
-Here at Flamant, you're not just buying a home… you're investing in a distinguished lifestyle—close to the sea, surrounded by top-tier services and amenities, in an area where value is growing every single day.
-This is the place you'll love coming back to.
-"""
+PROJECT_FEATURES = {
+    "Balconies": {
+        "description": "Imagine sipping your morning coffee or unwinding in the evening on your very own private balcony. Each home is designed with stunning outdoor space, perfect for enjoying fresh air and expanding your living area. It's a fantastic spot for a small garden or simply a place to relax and enjoy the view."
+    },
+    "Safety and Privacy": {
+        "description": "Your peace of mind is our top priority. We've built these homes with a focus on security and privacy, creating a tranquil environment where you can feel completely at ease. Our advanced security features ensure that your family and your home are always protected."
+    },
+    "Outdoor Courtyards": {
+        "description": "Experience the joy of indoor-outdoor living with a private outdoor courtyard. These unique spaces are perfect for hosting gatherings, having a family barbecue, or just a quiet retreat to get away from it all. It’s an exclusive extension of your home that provides both beauty and functionality."
+    },
+    "Distinctive Architectural Facades": {
+        "description": "First impressions matter, and the exterior of your new home is nothing short of spectacular. Our architects have designed facades that are both elegant and unique, making each home a standout in the neighborhood. You'll be proud to call this place your own."
+    },
+    "Smart Systems": {
+        "description": "Live smarter, not harder. Each home is equipped with a range of smart systems that put control at your fingertips. From lighting to climate control and security, you can manage your home with ease, providing you with convenience, energy savings, and a modern lifestyle."
+    },
+    "Elevator Foundation": {
+        "description": "Planning for the future is key, and we've already thought of it. While your home currently doesn't have an elevator, we have pre-installed the foundation for one. This feature provides an incredible value, as you have the option to add an elevator whenever you need it, ensuring your home is accessible and comfortable for years to come."
+    }
+}
 
 # ------------------------------------------------------------------
 # 2. Agent Prompt Template - Organized and Structured
@@ -148,7 +374,7 @@ def custom_agent_prompt(project_id: str, agent_name: str, agent_gender: str, dia
 
     This module provides a unified system prompt template that prevents the Live API
     from generating duplicate responses while ensuring proper dialect handling and
-    speech characteristics for the Flamant real estate project.
+    speech characteristics for the ehya-marina real estate project.
 
     Key Features:
     - Single template for all dialects (Arabic: Saudi/Egyptian, English).
@@ -244,7 +470,7 @@ When a user first connects or says hello, you MUST:
 
 1. **Welcome and Ask for Name:**
    * Begin the conversation with a greeting in the user’s dialect (e.g., Egyptian or Saudi). 
-   * Introduce yourself as the real estate assistant for the Flamant project, and politely ask for their name so you can help them better. 
+   * Introduce yourself as the real estate assistant for the ehya-marina project, and politely ask for their name so you can help them better. 
    * This step is essential for building rapport and making the conversation feel personal and engaging.
 
 2. **Wait for Name Response:**
@@ -600,7 +826,7 @@ User: "Just pick one for me"
 ═══════════════════════════════════════════════════════════════════════════════
 ## IMPORTANT NOTES
 ═══════════════════════════════════════════════════════════════════════════════
-- **Property Type:** Flamant offers APARTMENTS ONLY — no villas
+- **Property Type:** ehya-marina offers APARTMENTS ONLY — no villas
 - **Location:** Ensure all references to locations are accurate and up-to-date.
 - **Language:** Always reply in the specified {dialect}.
 - **Communication:** finalize_response is your voice for every message
@@ -614,7 +840,7 @@ User: "Just pick one for me"
     
     # Format the template with provided parameters
     return AGENT_PROMPT_TEMPLATE.format(
-        project_description=str(FLAMANT_PROJECT_DESCRIPTION),
+        project_description=str(EHYA_MARINA_PROJECT_DESCRIPTION),
         unit_one_description=Unit_ONE_Description,
         unit_two_description=Unit_TWO_Description,
         unit_two_half_description=Unit_TWO_HALF_Description,

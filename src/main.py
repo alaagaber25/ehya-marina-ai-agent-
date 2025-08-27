@@ -129,7 +129,7 @@ async def websocket_endpoint(ws: WebSocket):
                 "ENABLE_TRANSCRIPTION": True,
                 "MODEL": config.LIVEAPI_MODEL,
                 "SYSTEM_PROMPT": custom_agent_prompt(
-                    project_id="flamant",
+                    project_id="ehya-marina",
                     agent_name=agent_name,
                     agent_gender=agent_gender,
                     dialect=dialect,
@@ -211,7 +211,7 @@ def invalidate_cache():
 if __name__ == "__main__":
     import uvicorn
 
-    units = units_fetcher.fetch_units_from_api("flamant")
+    units = units_fetcher.fetch_units_from_api("ehya-marina")
     if units:
         logger.info(f"Fetched {len(units)} units from API.")
     else:
